@@ -11,6 +11,9 @@ def main():
     plot_side_by_side(original_img_1, linear_stretched_img_1)
     plot_side_by_side(original_img_2, linear_stretched_img_2)
 
+    power_stretched_image = power_law_contrast_stretch('LowLight_2.png')
+    plot_side_by_side(original_img_2, power_stretched_image)
+
 
 def plot_side_by_side(image_1, image_2):
     _, plots = plt.subplots(1, 2)
@@ -24,15 +27,16 @@ def plot_side_by_side(image_1, image_2):
 def linear_contrast_stretch(image_path):
     image_data = io.imread(image_path)
     A = np.max(image_data)
-    B = np.min(image_data)
     k = 255
-    if (A - B) != 0:
-        gain = k / (A - B)
-    # if image is one uniform intensity, no contrast enhancement possible
-    else:
-        gain = 1
+    gain = k / A
     stretched_image = image_data * gain
     return stretched_image
+
+
+def power_law_contrast_stretch(image_path):
+    image_data = io.imread(image_path) / 255
+    enhanced_image = image_data**(1 / 2)
+    return enhanced_image * 255
 
 
 if __name__ == "__main__":
