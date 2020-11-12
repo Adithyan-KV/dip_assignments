@@ -4,21 +4,31 @@ import numpy as np
 
 
 def main():
-    original_img_1 = io.imread('LowLight_1.png')
-    original_img_2 = io.imread('LowLight_2.png')
-    original_img_3 = io.imread('Hazy.png')
+    low_light_1 = io.imread('LowLight_1.png')
+    low_light_2 = io.imread('LowLight_2.png')
+    low_light_3 = io.imread('LowLight_3.png')
+    stone_face = io.imread('StoneFace.png')
+    hazy = io.imread('Hazy.png')
     linear_stretched_img_1 = linear_contrast_stretch('LowLight_1.png')
     linear_stretched_img_2 = linear_contrast_stretch('LowLight_2.png')
-    plot_side_by_side(original_img_1, linear_stretched_img_1, 'Linear stretch')
-    plot_side_by_side(original_img_2, linear_stretched_img_2, 'Linear stretch')
+    plot_side_by_side(low_light_1, linear_stretched_img_1, 'Linear stretch')
+    plot_side_by_side(low_light_2, linear_stretched_img_2, 'Linear stretch')
 
     power_stretched_image_1 = power_law_contrast_stretch(
         'LowLight_2.png', 1 / 2)
     power_stretched_image_2 = power_law_contrast_stretch('Hazy.png', 2)
-    plot_side_by_side(original_img_2, power_stretched_image_1,
+    plot_side_by_side(low_light_2, power_stretched_image_1,
                       'Power law stretch')
-    plot_side_by_side(original_img_3, power_stretched_image_2,
+    plot_side_by_side(hazy, power_stretched_image_2,
                       'Power law stretch')
+    histogram_eq_image_1 = histogram_equalize('LowLight_2.png')
+    plot_side_by_side(low_light_2, histogram_eq_image_1, 'hist eq')
+    histogram_eq_image_2 = histogram_equalize('LowLight_3.png')
+    histogram_eq_image_3 = histogram_equalize('Hazy.png')
+    histogram_eq_image_4 = histogram_equalize('StoneFace.png')
+    plot_side_by_side(low_light_3, histogram_eq_image_2, 'hist eq')
+    plot_side_by_side(hazy, histogram_eq_image_3, 'hist eq')
+    plot_side_by_side(stone_face, histogram_eq_image_4, 'hist eq')
 
 
 def plot_side_by_side(image_1, image_2, title):
@@ -44,6 +54,15 @@ def power_law_contrast_stretch(image_path, power):
     image_data = io.imread(image_path)
     normalized_image_data = image_data / 255
     enhanced_image = normalized_image_data**(power) * 255
+    return enhanced_image
+
+
+def histogram_equalize(image_path):
+    image_data = io.imread(image_path)
+    no_total_pixels = image_data.size
+    hist, _ = np.histogram(image_data, bins=255, range=(0, 255))
+    cdf = np.array([sum(hist[:i + 1]) / no_total_pixels for i in range(256)])
+    enhanced_image = cdf[image_data] * 255
     return enhanced_image
 
 
