@@ -74,19 +74,28 @@ def contrast_limited_histogram_equalize(image_path):
     size = 8
     image_data = io.imread(image_path)
     enhanced_image = np.zeros_like(image_data)
-    no_total_pixels = image_data.size
     rows, columns = image_data.shape
     for i in range(rows // size):
         for j in range(columns // size):
             block = image_data[i * size:(i + 1) *
                                size, j * size:(j + 1) * size]
-            hist, _ = np.histogram(image_data, bins=255, range=(0, 255))
+            hist, _ = np.histogram(block, bins=255, range=(0, 255))
+            cl_hist = contrast_limit_histogram(hist)
             cdf = np.array(
-                [sum(hist[:i + 1]) / no_total_pixels for i in range(256)])
+                [sum(cl_hist[:i + 1]) / size**2 for i in range(256)])
             enhanced_block = cdf[block] * 255
             enhanced_image[i * size:(i + 1) *
                            size, j * size:(j + 1) * size] = enhanced_block
     return enhanced_image
+
+
+def contrast_limit_histogram(histogram_freq):
+    threshold = 64
+    hist_size = len(histogram_freq)
+    excess = histogram_freq[histogram_freq > threshold].sum()
+    distribute = excess // hist_size
+    cl_histogram_freq = histogram_freq.clip(None, threshold) + distribute
+    return cl_histogram_freq
 
 
 if __name__ == "__main__":
