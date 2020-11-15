@@ -9,6 +9,7 @@ def main():
     low_light_3 = io.imread('LowLight_3.png')
     stone_face = io.imread('StoneFace.png')
     hazy = io.imread('Hazy.png')
+    books = io.imread('MathBooks.png')
     linear_stretched_img_1 = linear_contrast_stretch('LowLight_1.png')
     linear_stretched_img_2 = linear_contrast_stretch('LowLight_2.png')
     # plot_side_by_side(low_light_1, linear_stretched_img_1, 'Linear stretch')
@@ -30,6 +31,7 @@ def main():
     # plot_side_by_side(hazy, histogram_eq_image_3, 'hist eq')
     # plot_side_by_side(stone_face, histogram_eq_image_4, 'hist eq')
     saturated_stretch_image = saturated_contrast_stretch('MathBooks.png')
+    plot_side_by_side(books, saturated_stretch_image, 'saturated stretch')
 
 
 def plot_side_by_side(image_1, image_2, title):
@@ -108,7 +110,7 @@ def clahe_with_overlap(image_path):
 
 def saturated_contrast_stretch(image_path):
     image_data = io.imread(image_path)
-    percentage = 10
+    percentage = 15
     enhanced_image = np.zeros_like(image_data)
     # for each of R,G,B channels
     for i in range(3):
@@ -126,12 +128,13 @@ def saturated_contrast_stretch(image_path):
             if percentage_top > percentage:
                 threshold_top = value
                 break
-        print(threshold_bottom, threshold_top)
         channel[channel < threshold_bottom] = 0
         channel[channel > threshold_top] = 255
-        enhanced_image[:, :, i] = channel
-    plt.imshow(enhanced_image)
-    plt.show()
+        gain = 255 / np.max(channel[channel < 255])
+        enhanced_channel = channel * gain
+        enhanced_channel[enhanced_channel > 255] = 255
+        enhanced_image[:, :, i] = enhanced_channel
+    return enhanced_image
 
 
 if __name__ == "__main__":
