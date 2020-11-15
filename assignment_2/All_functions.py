@@ -30,8 +30,10 @@ def main():
     # plot_side_by_side(low_light_3, histogram_eq_image_2, 'hist eq')
     # plot_side_by_side(hazy, histogram_eq_image_3, 'hist eq')
     # plot_side_by_side(stone_face, histogram_eq_image_4, 'hist eq')
-    saturated_stretch_image = saturated_contrast_stretch('MathBooks.png')
-    plot_side_by_side(books, saturated_stretch_image, 'saturated stretch')
+    # saturated_stretch_image = saturated_contrast_stretch('MathBooks.png')
+    # plot_side_by_side(books, saturated_stretch_image, 'saturated stretch')
+    resized_image = resize('LowLight_1.png', 2)
+    plot_side_by_side(low_light_1, resized_image, 'resizing')
 
 
 def plot_side_by_side(image_1, image_2, title):
@@ -118,23 +120,42 @@ def saturated_contrast_stretch(image_path):
         total_pixels = image_data.size
         threshold_top, threshold_bottom = 1, 1
         channel = image_data[:, :, i]
+        # find the value below which n% of pixels lie
         for value in range(255):
             percentage_bottom = ((hist[:value]).sum() / total_pixels) * 100
             if percentage_bottom > percentage:
                 threshold_bottom = value
                 break
+        # find the value above which n% of pixels lie
         for value in range(255):
             percentage_top = (hist[255 - value:].sum() / total_pixels) * 100
             if percentage_top > percentage:
                 threshold_top = value
                 break
+        # set n% brightest pixels to 255 and darkest to 0
         channel[channel < threshold_bottom] = 0
         channel[channel > threshold_top] = 255
+        # perform linear contrast stretch on the channel
         gain = 255 / np.max(channel[channel < 255])
         enhanced_channel = channel * gain
+        # values set to 255 would've gone above 255, bring them back to 255
         enhanced_channel[enhanced_channel > 255] = 255
         enhanced_image[:, :, i] = enhanced_channel
     return enhanced_image
+
+
+def resize(image_path, resizing_factor, interpolation='nearest'):
+    image_data = io.imread(image_path)
+    rows, columns = image_data.shape
+    resized_rows = int(rows * resizing_factor)
+    resized_columns = int(columns * resizing_factor)
+    resized_image = np.zeros((resized_rows + 1, resized_columns + 1))
+    for i in range(resized_rows):
+        for j in range(resized_columns):
+            print(int(i / resizing_factor), int(j / resizing_factor))
+            resized_image[i, j] = image_data[round(
+                i / resizing_factor), round(j / resizing_factor)]
+    return resized_image
 
 
 if __name__ == "__main__":
