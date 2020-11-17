@@ -96,7 +96,7 @@ def contrast_limited_histogram_equalize(image_path):
 
 
 def contrast_limit_histogram(hist_freq):
-    threshold = 5
+    threshold = 40
     # maximum iterations for which program can run to equalize histogram
     # to prevent infinite loops for very narrow histograms
     max_iterations = 100
@@ -115,14 +115,22 @@ def contrast_limit_histogram(hist_freq):
 
 
 def clahe_with_overlap(image_path):
-    size = 8
-    overlap = 0.25
     image_data = io.imread(image_path)
-    enhanced_image = np.zeros_like(image_data)
     rows, columns = image_data.shape
-    for i in range(int(size * (1 - overlap)), rows, size):
-        for j in range(int(size * (1 - overlap)), columns, size):
-            print(i, j)
+    y_size = int(rows / 8)
+    x_size = int(columns / 8)
+    overlap = 0.25
+    y_step = int(size * overlap)
+    x_step = int(size * overlap)
+    enhanced_image = np.zeros_like(image_data)
+    for i in range(0, rows, y_step):
+        for j in range(0, columns, x_step):
+            block = image_data[i:i + y_size, j:j + x_size]
+            total_pixels = block.size
+            hist, _ = np.histogram(block, bins=255, range=(0, 255))
+            cdf = np.ones(256)
+            cl_hist = contrast_limit_histogram(hist)
+            cdf[:-1] = cl_hist.cumsum() / total_pixels
 
 
 def saturated_contrast_stretch(image_path):
