@@ -36,6 +36,8 @@ def main():
     # plot_side_by_side(low_light_1, resized_image, 'resizing')
     clahe_image = contrast_limited_histogram_equalize('StoneFace.png')
     plot_side_by_side(stone_face, clahe_image, 'tite')
+    # bleh = np.array([0, 0, 1, 2, 5, 6, 12, 1, 2, 10])
+    # contrast_limit_histogram(bleh)
 
 
 def plot_side_by_side(image_1, image_2, title):
@@ -93,13 +95,23 @@ def contrast_limited_histogram_equalize(image_path):
     return enhanced_image
 
 
-def contrast_limit_histogram(histogram_freq):
-    threshold = 40
-    hist_size = len(histogram_freq)
-    excess = histogram_freq[histogram_freq > threshold].sum()
-    distribute = excess // hist_size
-    cl_histogram_freq = histogram_freq.clip(None, threshold)
-    return cl_histogram_freq
+def contrast_limit_histogram(hist_freq):
+    threshold = 5
+    # maximum iterations for which program can run to equalize histogram
+    # to prevent infinite loops for very narrow histograms
+    max_iterations = 100
+    size = np.count_nonzero(hist_freq)
+    for _ in range(max_iterations):
+        if(hist_freq > threshold).sum() > 0:
+            excess = (hist_freq[hist_freq > threshold] - threshold).sum()
+            distribution_factor = excess // size
+            hist_freq = hist_freq.clip(None, threshold)
+            for i in range(len(hist_freq)):
+                if hist_freq[i] > 0 and hist_freq[i] < threshold:
+                    hist_freq[i] += distribution_factor
+        else:
+            break
+    return hist_freq
 
 
 def clahe_with_overlap(image_path):
