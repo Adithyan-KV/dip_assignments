@@ -32,8 +32,10 @@ def main():
     # plot_side_by_side(stone_face, histogram_eq_image_4, 'hist eq')
     # saturated_stretch_image = saturated_contrast_stretch('MathBooks.png')
     # plot_side_by_side(books, saturated_stretch_image, 'saturated stretch')
-    resized_image = resize('LowLight_1.png', 2)
-    plot_side_by_side(low_light_1, resized_image, 'resizing')
+    # resized_image = resize('LowLight_1.png', 2)
+    # plot_side_by_side(low_light_1, resized_image, 'resizing')
+    clahe_image = contrast_limited_histogram_equalize('StoneFace.png')
+    plot_side_by_side(stone_face, clahe_image, 'tite')
 
 
 def plot_side_by_side(image_1, image_2, title):
@@ -73,20 +75,21 @@ def histogram_equalize(image_path):
 
 
 def contrast_limited_histogram_equalize(image_path):
-    size = 8
     image_data = io.imread(image_path)
     enhanced_image = np.zeros_like(image_data)
     rows, columns = image_data.shape
-    for i in range(0, rows, size):
-        for j in range(0, columns, size):
-            block = image_data[i:i + size, j:j + size]
+    y_size = int(rows / 8)
+    x_size = int(columns / 8)
+    for i in range(0, rows, y_size):
+        for j in range(0, columns, x_size):
+            block = image_data[i:i + y_size, j:j + x_size]
             total_pixels = block.size
             hist, _ = np.histogram(block, bins=255, range=(0, 255))
             cdf = np.ones(256)
             cl_hist = contrast_limit_histogram(hist)
             cdf[:-1] = cl_hist.cumsum() / total_pixels
             enhanced_block = cdf[block] * 255
-            enhanced_image[i:i + size, j:j + size] = enhanced_block
+            enhanced_image[i:i + y_size, j:j + x_size] = enhanced_block
     return enhanced_image
 
 
@@ -95,7 +98,7 @@ def contrast_limit_histogram(histogram_freq):
     hist_size = len(histogram_freq)
     excess = histogram_freq[histogram_freq > threshold].sum()
     distribute = excess // hist_size
-    cl_histogram_freq = histogram_freq.clip(None, threshold) + distribute
+    cl_histogram_freq = histogram_freq.clip(None, threshold)
     return cl_histogram_freq
 
 
@@ -145,17 +148,23 @@ def saturated_contrast_stretch(image_path):
 
 
 def resize(image_path, resizing_factor, interpolation='nearest'):
-    image_data = io.imread(image_path)
+    image_data = np.array([[1, 2], [3, 4]])
+    # image_data = io.imread(image_path)
     rows, columns = image_data.shape
-    resized_rows = int(rows * resizing_factor)
-    resized_columns = int(columns * resizing_factor)
-    resized_image = np.zeros((resized_rows + 1, resized_columns + 1))
-    for i in range(resized_rows):
-        for j in range(resized_columns):
-            print(int(i / resizing_factor), int(j / resizing_factor))
-            resized_image[i, j] = image_data[round(
-                i / resizing_factor), round(j / resizing_factor)]
+    rows_resized = int(rows * resizing_factor)
+    columns_resized = int(columns * resizing_factor)
+    resized_image = np.zeros((rows_resized, columns_resized))
+    for i in range(rows_resized):
+        for j in range(columns_resized):
+            y = round(i / resizing_factor)
+            x = round(j / resizing_factor)
+            resized_image[i, j] = image_data[y, x]
+    print(resized_image)
     return resized_image
+
+
+def rotate(image_path, angle):
+    pass
 
 
 if __name__ == "__main__":
