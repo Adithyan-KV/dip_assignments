@@ -1,5 +1,6 @@
 import skimage.io as io
 import matplotlib.pyplot as plt
+import math
 import numpy as np
 
 
@@ -34,10 +35,9 @@ def main():
     # plot_side_by_side(books, saturated_stretch_image, 'saturated stretch')
     # resized_image = resize('LowLight_1.png', 2)
     # plot_side_by_side(low_light_1, resized_image, 'resizing')
-    clahe_image = contrast_limited_histogram_equalize('StoneFace.png')
-    plot_side_by_side(stone_face, clahe_image, 'tite')
-    # bleh = np.array([0, 0, 1, 2, 5, 6, 12, 1, 2, 10])
-    # contrast_limit_histogram(bleh)
+    # clahe_image = contrast_limited_histogram_equalize('StoneFace.png')
+    # plot_side_by_side(stone_face, clahe_image, 'tite')
+    rotated_image = rotate('Hazy.png', 45)
 
 
 def plot_side_by_side(image_1, image_2, title):
@@ -184,7 +184,14 @@ def resize(image_path, resizing_factor, interpolation='nearest'):
 
 
 def rotate(image_path, angle):
-    pass
+    image_data = io.imread(image_path)
+    h, w = image_data.shape
+    theta = math.radians(angle)
+    final_h = int(w * math.sin(theta) + h * math.sin(math.pi / 2 - theta))
+    final_w = int(w * math.cos(theta) + h * math.cos(math.pi / 2 - theta))
+    rotated_image = np.zeros((final_h, final_w))
+    print(final_h, final_w)
+    print(h, w)
 
 
 if __name__ == "__main__":
