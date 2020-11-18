@@ -33,13 +33,13 @@ def main():
     # plot_side_by_side(stone_face, histogram_eq_image_4, 'hist eq')
     # saturated_stretch_image = saturated_contrast_stretch('MathBooks.png')
     # plot_side_by_side(books, saturated_stretch_image, 'saturated stretch')
-    # resized_image = resize('LowLight_1.png', 2)
-    # plot_side_by_side(low_light_1, resized_image, 'resizing')
+    resized_image = resize('LowLight_1.png', 2)
+    plot_side_by_side(low_light_1, resized_image, 'resizing')
     # clahe_image = contrast_limited_histogram_equalize('StoneFace.png')
     # plot_side_by_side(stone_face, clahe_image, 'tite')
-    rotated_image = rotate('MathBooks.png', 15)
-    plt.imshow(rotated_image)
-    plt.show()
+    # rotated_image = rotate('MathBooks.png', 15)
+    # plt.imshow(rotated_image)
+    # plt.show()
 
 
 def plot_side_by_side(image_1, image_2, title):
@@ -171,8 +171,8 @@ def saturated_contrast_stretch(image_path):
 
 
 def resize(image_path, resizing_factor, interpolation='nearest'):
-    image_data = np.array([[1, 2], [3, 4]])
-    # image_data = io.imread(image_path)
+    # image_data = np.array([[1, 2], [3, 4]])
+    image_data = io.imread(image_path)
     rows, columns = image_data.shape
     rows_resized = int(rows * resizing_factor)
     columns_resized = int(columns * resizing_factor)
@@ -181,12 +181,13 @@ def resize(image_path, resizing_factor, interpolation='nearest'):
         for j in range(columns_resized):
             y = round(i / resizing_factor)
             x = round(j / resizing_factor)
-            resized_image[i, j] = image_data[y, x]
+            if y < rows and x < columns:
+                resized_image[i, j] = image_data[y, x]
     print(resized_image)
     return resized_image
 
 
-def rotate(image_path, angle):
+def rotate(image_path, angle, interpolation='nearest'):
     image_data = io.imread(image_path)
     h = image_data.shape[0]
     w = image_data.shape[1]
@@ -222,7 +223,7 @@ def rotate(image_path, angle):
             new_y = new_origin_h - round(-x * sine + y * cosine)
             new_x = new_origin_w - round(x * cosine + y * sine)
 
-            # copy fo single channel image
+            # copy for single channel image
             if channels == 1:
                 rotated_image[new_y, new_x] = image_data[i, j]
             # for multi channel image copy all channels
