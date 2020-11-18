@@ -183,7 +183,12 @@ def resize(image_path, resizing_factor, interpolation='nearest'):
             x = round(j / resizing_factor)
             if y < rows and x < columns:
                 resized_image[i, j] = image_data[y, x]
-    print(resized_image)
+            elif y >= rows and x >= rows:
+                resized_image[i, j] = image_data[-1, -1]
+            elif y >= rows:
+                resized_image[i, j] = image_data[-1, x]
+            elif x >= rows:
+                resized_image[i, j] = image_data[y, -1]
     return resized_image
 
 
