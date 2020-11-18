@@ -37,7 +37,9 @@ def main():
     # plot_side_by_side(low_light_1, resized_image, 'resizing')
     # clahe_image = contrast_limited_histogram_equalize('StoneFace.png')
     # plot_side_by_side(stone_face, clahe_image, 'tite')
-    rotated_image = rotate('Hazy.png', 45)
+    rotated_image = rotate('Hazy.png', 15)
+    plt.imshow(rotated_image, cmap='gray')
+    plt.show()
 
 
 def plot_side_by_side(image_1, image_2, title):
@@ -120,8 +122,8 @@ def clahe_with_overlap(image_path):
     y_size = int(rows / 8)
     x_size = int(columns / 8)
     overlap = 0.25
-    y_step = int(size * overlap)
-    x_step = int(size * overlap)
+    y_step = int(x_size * overlap)
+    x_step = int(y_size * overlap)
     enhanced_image = np.zeros_like(image_data)
     for i in range(0, rows, y_step):
         for j in range(0, columns, x_step):
@@ -131,6 +133,7 @@ def clahe_with_overlap(image_path):
             cdf = np.ones(256)
             cl_hist = contrast_limit_histogram(hist)
             cdf[:-1] = cl_hist.cumsum() / total_pixels
+    return enhanced_image
 
 
 def saturated_contrast_stretch(image_path):
@@ -186,12 +189,41 @@ def resize(image_path, resizing_factor, interpolation='nearest'):
 def rotate(image_path, angle):
     image_data = io.imread(image_path)
     h, w = image_data.shape
+    # accounting for images with differing number of channels
+    if len(image_data.shape > 2):
+        channels = image_data.shape[2]
+    else:
+        channels = 1
     theta = math.radians(angle)
-    final_h = int(w * math.sin(theta) + h * math.sin(math.pi / 2 - theta))
-    final_w = int(w * math.cos(theta) + h * math.cos(math.pi / 2 - theta))
-    rotated_image = np.zeros((final_h, final_w))
-    print(final_h, final_w)
-    print(h, w)
+    cosine = math.cos(theta)
+    sine = math.sin(theta)
+
+    # Dimensions of rotated_image
+    new_h = round(abs(h * cosine) + abs(w * sine)) + 1
+    new_w = round(abs(w * cosine) + abs(h * sine)) + 1
+    rotated_image = np.zeros((new_h, new_w, channels))
+
+    # center of image about which rotation will occur
+    origin_h = round(((h + 1) / 2) - 1)
+    origin_w = round(((w + 1) / 2) - 1)
+
+    # center of new image
+    new_origin_h = round(((new_h + 1) / 2) - 1)
+    new_origin_w = round(((new_w + 1) / 2) - 1)
+
+    for i in range(h):
+        for j in range(w):
+            # co-ordinates w.r.t center
+            y = h - i - origin_h - 1
+            x = w - j - origin_w - 1
+
+            # co-ordinate w.r.t rotated image
+            new_y = new_origin_h - round(-x * sine + y * cosine)
+            new_x = new_origin_w - round(x * cosine + y * sine)
+
+            rotated_image[new_y, new_x] = image_data[i, j]
+
+    return rotated_image
 
 
 if __name__ == "__main__":
