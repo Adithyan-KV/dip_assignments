@@ -37,8 +37,8 @@ def main():
     # plot_side_by_side(low_light_1, resized_image, 'resizing')
     # clahe_image = contrast_limited_histogram_equalize('StoneFace.png')
     # plot_side_by_side(stone_face, clahe_image, 'tite')
-    rotated_image = rotate('Hazy.png', 15)
-    plt.imshow(rotated_image, cmap='gray')
+    rotated_image = rotate('MathBooks.png', 15)
+    plt.imshow(rotated_image)
     plt.show()
 
 
@@ -188,9 +188,10 @@ def resize(image_path, resizing_factor, interpolation='nearest'):
 
 def rotate(image_path, angle):
     image_data = io.imread(image_path)
-    h, w = image_data.shape
+    h = image_data.shape[0]
+    w = image_data.shape[1]
     # accounting for images with differing number of channels
-    if len(image_data.shape > 2):
+    if len(image_data.shape) > 2:
         channels = image_data.shape[2]
     else:
         channels = 1
@@ -201,7 +202,7 @@ def rotate(image_path, angle):
     # Dimensions of rotated_image
     new_h = round(abs(h * cosine) + abs(w * sine)) + 1
     new_w = round(abs(w * cosine) + abs(h * sine)) + 1
-    rotated_image = np.zeros((new_h, new_w, channels))
+    rotated_image = np.zeros((new_h, new_w, channels), dtype=int)
 
     # center of image about which rotation will occur
     origin_h = round(((h + 1) / 2) - 1)
@@ -221,7 +222,12 @@ def rotate(image_path, angle):
             new_y = new_origin_h - round(-x * sine + y * cosine)
             new_x = new_origin_w - round(x * cosine + y * sine)
 
-            rotated_image[new_y, new_x] = image_data[i, j]
+            # copy fo single channel image
+            if channels == 1:
+                rotated_image[new_y, new_x] = image_data[i, j]
+            # for multi channel image copy all channels
+            else:
+                rotated_image[new_y, new_x, :] = image_data[i, j, :]
 
     return rotated_image
 
