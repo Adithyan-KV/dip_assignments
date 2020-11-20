@@ -34,11 +34,12 @@ def main():
     # saturated_stretch_image = saturated_contrast_stretch('MathBooks.png')
     # plot_side_by_side(books, saturated_stretch_image, 'saturated stretch')
     # resized_image = resize('LowLight_1.png', 2)
-    # plot_side_by_side(low_light_1, resized_image, 'resizing')
+    resized_image = resiza('LowLight_1.png', 2)
+    plot_side_by_side(low_light_1, resized_image, 'resizing')
     # clahe_image = contrast_limited_histogram_equalize('StoneFace.png')
     # plot_side_by_side(stone_face, clahe_image, 'tite')
-    clahe_overlap_image = clahe_with_overlap('StoneFace.png', 0.25)
-    plot_side_by_side(stone_face, clahe_overlap_image, 'CLAHE overlap')
+    # clahe_overlap_image = clahe_with_overlap('StoneFace.png', 0.25)
+    # plot_side_by_side(stone_face, clahe_overlap_image, 'CLAHE overlap')
     # rotated_image = rotate('MathBooks.png', 15)
     # plt.imshow(rotated_image)
     # plt.show()
@@ -98,7 +99,7 @@ def contrast_limited_histogram_equalize(image_path):
 
 
 def contrast_limit_histogram(hist_freq):
-    threshold = 0.01 * hist_freq.sum()
+    threshold = 0.1 * hist_freq.sum()
     # maximum iterations for which program can run to equalize histogram
     # to prevent infinite loops for very narrow histograms
     max_iterations = 100
@@ -165,25 +166,79 @@ def clahe_with_overlap(image_path, overlap=0.25):
     return enhanced_image
 
 
-def resize(image_path, resizing_factor, interpolation='nearest'):
-    # image_data = np.array([[1, 2], [3, 4]])
+def saturated_contrast_stretch(image_path):
     image_data = io.imread(image_path)
+    enhanced_image = np.zeros_like(image_data)
+    total_pixels = image_data.size
+    percentage = 0.5
+    fraction = int(percentage / 100 * total_pixels)
+
+    # perform contrast stretch on all channels
+    channels = image_data.shape[2]
+    for i in range(channels):
+
+        temp = image_data[:, :, i]
+
+        hist, _ = np.histogram(temp, range=[0, 255], bins=256)
+
+        min_thresh, max_thresh = get_threshold(hist, fraction)
+
+        # set pixels above and below a threshold to white and black
+        temp[temp >= max_thresh] = 255
+        temp[temp <= min_thresh] = 0
+
+        temp_mask_inv = np.logical_or((temp == 255), (temp == 0))
+        temp_mask = np.logical_not(temp_mask_inv)
+        masked_temp = temp_mask * temp
+        masked_temp_inv = temp_mask_inv * temp
+
+        min_intensity = np.min(masked_temp[np.nonzero(masked_temp)])
+        max_intensity = np.max(masked_temp)
+
+        enhanced_masked_temp = (
+            masked_temp * (255 / (max_intensity - min_intensity)))
+        enchanced_temp = enhanced_masked_temp + masked_temp_inv
+        enhanced_image[:, :, i] = enchanced_temp
+
+    return enhanced_image
+
+
+def get_threshold(hist, fraction):
+
+    int_sum = 0
+    min_int = 0
+    max_int = 255
+    while int_sum < fraction:
+        min_int += 1
+        int_sum += hist[min_int]
+    int_sum = 0
+    while int_sum < fraction:
+        max_int -= 1
+        int_sum += hist[max_int]
+    return [min_int, max_int]
+
+
+def resize(image_path, resize_factor, interpolation="nearest"):
+    image_data = io.imread(image_path)
+
     rows, columns = image_data.shape
-    rows_resized = int(rows * resizing_factor)
-    columns_resized = int(columns * resizing_factor)
+
+    # calculating final size of resized image
+    columns_resized = int(columns * resize_factor)
+    rows_resized = int(rows * resize_factor)
     resized_image = np.zeros((rows_resized, columns_resized))
+
     for i in range(rows_resized):
         for j in range(columns_resized):
-            y = round(i / resizing_factor)
-            x = round(j / resizing_factor)
-            if y < rows and x < columns:
-                resized_image[i, j] = image_data[y, x]
-            elif y >= rows and x >= rows:
-                resized_image[i, j] = image_data[-1, -1]
-            elif y >= rows:
-                resized_image[i, j] = image_data[-1, x]
-            elif x >= rows:
-                resized_image[i, j] = image_data[y, -1]
+
+            y = round(i / resize_factor)
+            x = round(j / resize_factor)
+
+            if interpolation == "nearest":
+                # accounting for pixels in the last row
+                resized_image[i, j] = image_data[min(
+                    y, rows - 1), min(x, columns - 1)]
+
     return resized_image
 
 
@@ -231,65 +286,6 @@ def rotate(image_path, angle, interpolation='nearest'):
                 rotated_image[new_y, new_x, :] = image_data[i, j, :]
 
     return rotated_image
-
-
-def saturated_contrast_stretch(image_path):
-    image_data = io.imread(image_path)
-    enhanced_image = np.zeros_like(image_data)
-    total_pixels = image_data.size
-    percentage = 0.5
-    fraction = int(percentage / 100 * total_pixels)
-
-    # perform contrast stretch on all channels
-    channels = image_data.shape[2]
-    for i in range(channels):
-
-        temp = image_data[:, :, i]
-
-        hist, _ = np.histogram(temp, range=[0, 255], bins=256)
-
-        min_thresh, max_thresh = get_threshold(hist, fraction)
-
-        temp[temp >= max_thresh] = 255
-        temp[temp <= min_thresh] = 0
-
-        temp_mask_inv = np.logical_or((temp == 255), (temp == 0))
-        temp_mask = np.logical_not(temp_mask_inv)
-
-        masked_temp = temp_mask * temp
-        masked_temp_inv = temp_mask_inv * temp
-
-        min_intensity = np.min(masked_temp[np.nonzero(masked_temp)])
-        max_intensity = np.max(masked_temp)
-
-        enhanced_masked_temp = (
-            masked_temp * (255 / (max_intensity - min_intensity)))
-
-        enchanced_temp = enhanced_masked_temp + masked_temp_inv
-
-        enhanced_image[:, :, i] = enchanced_temp
-
-    return enhanced_image
-
-
-def get_threshold(hist, fraction):
-
-    int_sum = 0
-
-    min_int = 0
-    max_int = 255
-
-    while int_sum < fraction:
-        min_int += 1
-        int_sum += hist[min_int]
-
-    int_sum = 0
-
-    while int_sum < fraction:
-        max_int -= 1
-        int_sum += hist[max_int]
-
-    return [min_int, max_int]
 
 
 if __name__ == "__main__":
