@@ -41,8 +41,7 @@ def main():
     # plot_side_by_side(stone_face, clahe_image, 'tite')
     # clahe_overlap_image = clahe_with_overlap('StoneFace.png', 0.25)
     # plot_side_by_side(stone_face, clahe_overlap_image, 'CLAHE overlap')
-    rotated_image = rotate('StoneFace.png', 15)
-    # rotated_image = ImgRotate('StoneFace.png', 90)
+    rotated_image = rotate('StoneFace.png', 90, interpolation='bilinear')
     plt.imshow(rotated_image, cmap='gray')
     plt.show()
 
@@ -237,27 +236,33 @@ def resize(image_path, resize_factor, interpolation="nearest"):
                 y = round(i / resize_factor)
                 x = round(j / resize_factor)
                 # accounting for pixels in the last row
-                resized_image[i, j] = image_data[min(
-                    y, rows - 1), min(x, columns - 1)]
+                resized_image[i, j] = image_data[min(y, rows - 1),
+                                                 min(x, columns - 1)]
 
             if interpolation == "bilinear":
-                y = int(i / resize_factor)
-                x = int(j / resize_factor)
+                y_ceil = math.ceil(i / resize_factor)
+                x_ceil = math.ceil(j / resize_factor)
+                y_floor = math.floor(i / resize_factor)
+                x_floor = math.floor(j / resize_factor)
 
                 # if not edge pixel
-                if 0 < y < rows - 1 and 0 < x < columns - 1:
+                if 0 < y_floor < rows - 1 and 0 < x_floor < columns - 1:
                     # four neighboring image cordinates
-                    f = np.array([image_data[y, x], image_data[y + 1, x],
-                                  image_data[y, x + 1], image_data[y + 1, x + 1]])
-                    n = np.array([[1, y, x, y * x], [1, y + 1, x, (y + 1) * x],
-                                  [1, y, x + 1, y * (x + 1)], [1, y + 1, x + 1, (y + 1) * (x + 1)]])
+                    f = np.array([image_data[y_floor, x_floor],
+                                  image_data[y_ceil, x_floor],
+                                  image_data[y_floor, x_ceil],
+                                  image_data[y_ceil, x_ceil]],)
+                    n = np.array([[1, y_floor, x_floor, y_floor * x_floor],
+                                  [1, y_ceil, x_floor, (y_ceil) * x_floor],
+                                  [1, y_floor, x_ceil, y_floor * (x_ceil)],
+                                  [1, y_ceil, x_ceil, (y_ceil) * (x_ceil)]])
 
                     # if the inverse exists
                     if np.linalg.det(n) != 0:
                         # solve and find bilinear weights
                         A = np.linalg.solve(n, f)
                         resized_image[i, j] = A[0] + A[1] * \
-                            y + A[2] * x + A[3] * x * y
+                            y_floor + A[2] * x_floor + A[3] * x_floor * y_floor
 
                     # if it cannot be solved for bilinear weights
                     else:
@@ -265,171 +270,87 @@ def resize(image_path, resize_factor, interpolation="nearest"):
                         resized_image[i, j] = f.sum() / 4
                 # if edge pixel assign the nearest neighbor
                 else:
-                    resized_image[i, j] = image_data[min(y, rows - 1),
-                                                     min(x, columns - 1)]
+                    resized_image[i, j] = image_data[min(y_floor, rows - 1),
+                                                     min(x_floor, columns - 1)]
     return resized_image
 
 
-def rotate(image_path, angle, interpolation='nearest'):
+def rotate(image_path, angle, interpolation="nearest"):
     image_data = io.imread(image_path)
-    h = image_data.shape[0]
-    w = image_data.shape[1]
-    # accounting for images with differing number of channels
-    if len(image_data.shape) > 2:
-        channels = image_data.shape[2]
-    else:
-        channels = 1
+    image_data = image_data
+
+    # calculating some constants
     theta = math.radians(angle)
-    cosine = math.cos(theta)
-    sine = math.sin(theta)
+    cos = math.cos(theta)
+    sin = math.sin(theta)
 
-    # Dimensions of rotated_image
-    new_h = round(abs(h * cosine) + abs(w * sine)) + 1
-    new_w = round(abs(w * cosine) + abs(h * sine)) + 1
-    rotated_image = np.zeros((new_h, new_w, channels), dtype=int)
+    h, w = image_data.shape
 
-    # center of image about which rotation will occur
-    origin_h = round(((h + 1) / 2) - 1)
-    origin_w = round(((w + 1) / 2) - 1)
+    # calculating the size of the rotated image
+    height_new = round(abs(h * cos + w * sin)) + 1
+    width_new = round(abs(w * cos + h * sin)) + 1
 
-    # center of new image
-    new_origin_h = round(((new_h + 1) / 2) - 1)
-    new_origin_w = round(((new_w + 1) / 2) - 1)
+    # Center of original and rotated image coordinate systems
+    origin_h = int((h + 1) / 2)
+    origin_w = int((w + 1) / 2)
+    origin_h_rot = int((height_new + 1) / 2)
+    origin_w_rot = int((width_new + 1) / 2)
 
-    for i in range(new_h):
-        for j in range(new_w):
-            # co-ordinates w.r.t center
-            y = new_origin_h - i
-            x = new_origin_w - j
-
-            y_new = y * cosine - x * sine
-            x_new = y * sine + x * cosine
-
-            i_new = origin_h - y_new
-            j_new = origin_w - x_new
-
-            if 0 < i_new < h - 1 and 0 < j_new < w - 1:
-
-                if interpolation == 'nearest':
-                    rotated_image[i, j] = image_data[min(
-                        round(i_new), h - 1), min(round(j_new), w - 1)]
-
-                if interpolation == 'bilinear':
-                    # if not edge pixel
-                    if 0 < y < h - 1 and 0 < x < w - 1:
-                        # four neighboring image cordinates
-                        f = np.array([image_data[y, x], image_data[y + 1, x],
-                                      image_data[y, x + 1], image_data[y + 1, x + 1]])
-                        n = np.array([[1, y, x, y * x], [1, y + 1, x, (y + 1) * x],
-                                      [1, y, x + 1, y * (x + 1)], [1, y + 1, x + 1, (y + 1) * (x + 1)]])
-
-                        # if the inverse exists
-                        if np.linalg.det(n) != 0:
-                            # solve and find bilinear weights
-                            A = np.linalg.solve(n, f)
-                            rotated_image[i, j] = A[0] + A[1] * \
-                                y + A[2] * x + A[3] * x * y
-
-                        # if it cannot be solved for bilinear weights
-                        else:
-                            # set pixel as average of surrounding pixels
-                            rotated_image[i, j] = f.sum() / 4
-                    # if edge pixel assign the nearest neighbor
-                    else:
-                        rotated_image[i, j] = image_data[min(y, h - 1),
-                                                         min(x, w - 1)]
-    return rotated_image
-
-
-def ImgRotate(image_path, angle, interpolation="nearest"):
-    image = io.imread(image_path)  # Load the image
-
-    image = image / 255  # Normalize teh image to [0,1]
-
-    angle = math.radians(angle)  # Convert the angle to radians
-
-    # Define the cos and sin
-    cos = math.cos(angle)
-    sin = math.sin(angle)
-
-    height, width = image.shape  # Obtain the image dimensions
-
-    # Compute the dimesions of the final image
-    height_new = round(abs(height * cos + width * sin)) + 1
-    width_new = round(abs(width * cos + height * sin)) + 1
-
-    # Compute the center of the image about which we are to rotate
-    height_center = round(height / 2)
-    width_center = round(width / 2)
-
-    # Commpute the correspoding center of the rotated image
-    height_center_new = round(height_new / 2)
-    width_center_new = round(width_new / 2)
-
-    # Initialize an array to store the final image
+    # final rotated image
     rotated_image = np.zeros((height_new, width_new))
 
-    # Iterate through each pixel in the final image
     for i in range(height_new):
         for j in range(width_new):
 
-            # Convert the final image indices to cartesion coordinates centered at image center
-            y = height_center_new - i
-            x = width_center_new - j
+            # transform to image center coordinates
+            y = origin_h_rot - i
+            x = origin_w_rot - j
 
-            # Obtain the corresponding inidces of the final image by performing roation
-            y_ = y * cos - x * sin
-            x_ = y * sin + x * cos
+            # corresponding coords in rotated coordinates
+            y_rot = y * cos - x * sin
+            x_rot = y * sin + x * cos
 
-            i_ = height_center - y_
-            j_ = x_ + width_center
+            i_rot = origin_h - y_rot
+            j_rot = x_rot + origin_w
 
-            # print(i, j, x, y, x_, y_, i_, j_)
+            if 0 < i_rot < h - 1 and 0 < j_rot < w - 1:
+                if interpolation == "nearest":
+                    rotated_image[i, j] = image_data[min(
+                        round(i_rot), h - 1), min(round(j_rot), w - 1)]
 
-            if (i_ < 0) or (i_ > height - 1) or (j_ < 0) or (j_ > width - 1):
-                continue
+                elif interpolation == "bilinear":
 
-            # Case of nearest neighbour interpolation
-            if interpolation == "nearest":
+                    # used to calculate neighboring pixels
+                    i_floor = math.floor(i_rot)
+                    j_floor = math.floor(j_rot)
+                    i_ceil = math.ceil(i_rot)
+                    j_ceil = math.ceil(j_rot)
 
-                # Round off the indices
-                rotated_image[i, j] = image[min(
-                    round(i_), height - 1), min(round(j_), width - 1)]
+                    if 0 < i_floor < h - 1 and 0 < j_floor < w - 1:
 
-            # Case of bilinear interpolation
-            elif interpolation == "bilinear":
+                        # used to solve for bilinear weights
+                        n = np.array([[1, i_floor, j_floor, i_floor * j_floor],
+                                      [1, i_floor, j_ceil,
+                                          i_floor * j_ceil],
+                                      [1, i_ceil, j_floor,
+                                          i_ceil * j_floor],
+                                      [1, i_ceil, j_ceil, i_ceil * j_ceil]])
+                        f = np.array([[image_data[i_floor, j_floor]],
+                                      [image_data[i_floor, j_ceil]],
+                                      [image_data[i_ceil, j_floor]],
+                                      [image_data[i_ceil, j_ceil]]])
 
-                # Compute the four neighbours of (i_, j_)
-                i_f = math.floor(i_)
-                i_c = math.ceil(i_)
-                j_f = math.floor(j_)
-                j_c = math.ceil(j_)
+                        # if solution exists
+                        if np.linalg.det(n) != 0:
+                            # solve for weights and update values
+                            A = np.linalg.solve(n, f)
+                            rotated_image[i, j] = A[0] + A[1] * \
+                                i_rot + A[2] * j_rot + A[3] * i_rot * j_rot
 
-                # Make sure the neighbour indices are in the range of the imae dimensions
-                if (i_c in range(height)) and (j_c in range(width)):
-
-                    # Create a matrix with the bilinear terms
-                    a = np.array([[1, i_f, j_f, i_f * j_f], [1, i_f, j_c, i_f * j_c],
-                                  [1, i_c, j_f, i_c * j_f], [1, i_c, j_c, i_c * j_c]])
-
-                    # Create column vector with neighbour intensities
-                    b = np.array([[image[i_f, j_f]], [image[i_f, j_c]], [
-                                 image[i_c, j_f]], [image[i_c, j_c]]])
-
-                    # Case where determinant of a is not zero, only when you'll get solution for the set of linear equations
-                    if np.linalg.det(a) != 0:
-                        # Obtain the bilinear coefficients by soolving ax=b
-                        x = np.linalg.solve(a, b)
-
-                        # Add the interpolated pixel value to the final image
-                        rotated_image[i, j] = x[0] + x[1] * \
-                            i_ + x[2] * j_ + x[3] * i_ * j_
-
-                    # If the system of equations dont have a solution, set the corresponding pixel to the
-                    # average of its neighbours
-                    else:
-                        rotated_image[i, j] = b.sum() / 4
-
+                        # if cannot be solved
+                        else:
+                            # assign average value of surrounding pixels
+                            rotated_image[i, j] = f.sum() / 4
     return rotated_image
 
 
