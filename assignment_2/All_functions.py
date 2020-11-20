@@ -33,10 +33,13 @@ def main():
     # plot_side_by_side(stone_face, histogram_eq_image_4, 'hist eq')
     # saturated_stretch_image = saturated_contrast_stretch('MathBooks.png')
     # plot_side_by_side(books, saturated_stretch_image, 'saturated stretch')
-    resized_image = resize('LowLight_1.png', 2)
-    plot_side_by_side(low_light_1, resized_image, 'resizing')
+    # resized_image = resize('LowLight_1.png', 2)
+    # plot_side_by_side(low_light_1, resized_image, 'resizing')
     # clahe_image = contrast_limited_histogram_equalize('StoneFace.png')
     # plot_side_by_side(stone_face, clahe_image, 'tite')
+    clahe_overlap_image = clahe_with_overlap('StoneFace.png')
+    # clahe_overlap_image = CLAHE_smooth('StoneFace.png', 40)
+    plot_side_by_side(stone_face, clahe_overlap_image, 'CLAHE overlap')
     # rotated_image = rotate('MathBooks.png', 15)
     # plt.imshow(rotated_image)
     # plt.show()
@@ -71,9 +74,8 @@ def power_law_contrast_stretch(image_path, power):
 def histogram_equalize(image_path):
     image_data = io.imread(image_path)
     no_total_pixels = image_data.size
-    hist, _ = np.histogram(image_data, bins=255, range=(0, 255))
-    cdf = np.ones(256)
-    cdf[:-1] = hist.cumsum() / no_total_pixels
+    hist, _ = np.histogram(image_data, bins=256, range=(0, 255))
+    cdf = hist.cumsum() / no_total_pixels
     enhanced_image = cdf[image_data] * 255
     return enhanced_image
 
@@ -88,10 +90,9 @@ def contrast_limited_histogram_equalize(image_path):
         for j in range(0, columns, x_size):
             block = image_data[i:i + y_size, j:j + x_size]
             total_pixels = block.size
-            hist, _ = np.histogram(block, bins=255, range=(0, 255))
-            cdf = np.ones(256)
+            hist, _ = np.histogram(block, bins=256, range=(0, 255))
             cl_hist = contrast_limit_histogram(hist)
-            cdf[:-1] = cl_hist.cumsum() / total_pixels
+            cdf = cl_hist.cumsum() / total_pixels
             enhanced_block = cdf[block] * 255
             enhanced_image[i:i + y_size, j:j + x_size] = enhanced_block
     return enhanced_image
@@ -118,55 +119,48 @@ def contrast_limit_histogram(hist_freq):
 
 def clahe_with_overlap(image_path):
     image_data = io.imread(image_path)
-    rows, columns = image_data.shape
-    y_size = int(rows / 8)
-    x_size = int(columns / 8)
+    num_bins = 256
     overlap = 0.25
-    y_step = int(x_size * overlap)
-    x_step = int(y_size * overlap)
-    enhanced_image = np.zeros_like(image_data)
-    for i in range(0, rows, y_step):
-        for j in range(0, columns, x_step):
-            block = image_data[i:i + y_size, j:j + x_size]
+
+    rows, columns = image_data.shape
+    tiles = 8
+
+    block_size_x = math.ceil(columns / (tiles - (tiles * overlap) + overlap))
+    block_size_y = math.ceil(rows / (tiles - (tiles * overlap) + overlap))
+
+    overlap_x = math.ceil(block_size_x * overlap)
+    overlap_y = math.ceil(block_size_y * overlap)
+
+    non_overlap_x = block_size_x - overlap_x
+    non_overlap_y = block_size_y - overlap_y
+
+    # An array to keep track of regions with overlap
+    overlap_map = np.zeros_like(image_data)
+
+    # The final contrast enhanced image
+    enhanced_image = np.zeros_like(image_data, dtype=np.float64)
+
+    for i in range(tiles):
+        for j in range(tiles):
+
+            start_i = i * non_overlap_y
+            stop_i = min(start_i + block_size_y, rows)
+            start_j = j * non_overlap_x
+            stop_j = min(start_j + block_size_x, columns)
+
+            block = image_data[start_i:stop_i, start_j:stop_j]
             total_pixels = block.size
-            hist, _ = np.histogram(block, bins=255, range=(0, 255))
-            cdf = np.ones(256)
+            hist, _ = np.histogram(block, bins=num_bins, range=(0, 255))
             cl_hist = contrast_limit_histogram(hist)
-            cdf[:-1] = cl_hist.cumsum() / total_pixels
-    return enhanced_image
+            cdf = cl_hist.cumsum() / total_pixels
+            enhanced_block = np.zeros_like(block, dtype=np.float64)
+            enhanced_block = cdf[block] * 255
+            enhanced_image[start_i:stop_i,
+                           start_j: stop_j] += enhanced_block
+            overlap_map[start_i: stop_i, start_j: stop_j] += 1
 
+    enhanced_image = np.divide(enhanced_image, overlap_map)
 
-def saturated_contrast_stretch(image_path):
-    image_data = io.imread(image_path)
-    percentage = 15
-    enhanced_image = np.zeros_like(image_data)
-    # for each of R,G,B channels
-    for i in range(3):
-        hist, _ = np.histogram(image_data[:, :, i], bins=255, range=(0, 255))
-        total_pixels = image_data.size
-        threshold_top, threshold_bottom = 1, 1
-        channel = image_data[:, :, i]
-        # find the value below which n% of pixels lie
-        for value in range(255):
-            percentage_bottom = ((hist[:value]).sum() / total_pixels) * 100
-            if percentage_bottom > percentage:
-                threshold_bottom = value
-                break
-        # find the value above which n% of pixels lie
-        for value in range(255):
-            percentage_top = (hist[255 - value:].sum() / total_pixels) * 100
-            if percentage_top > percentage:
-                threshold_top = value
-                break
-        # set n% brightest pixels to 255 and darkest to 0
-        channel[channel < threshold_bottom] = 0
-        channel[channel > threshold_top] = 255
-        # perform linear contrast stretch on the channel
-        gain = 255 / np.max(channel[channel < 255])
-        enhanced_channel = channel * gain
-        # values set to 255 would've gone above 255, bring them back to 255
-        enhanced_channel[enhanced_channel > 255] = 255
-        enhanced_image[:, :, i] = enhanced_channel
     return enhanced_image
 
 
@@ -236,6 +230,65 @@ def rotate(image_path, angle, interpolation='nearest'):
                 rotated_image[new_y, new_x, :] = image_data[i, j, :]
 
     return rotated_image
+
+
+def saturated_contrast_stretch(image_path):
+    image_data = io.imread(image_path)
+    enhanced_image = np.zeros_like(image_data)
+    total_pixels = image_data.size
+    percentage = 0.5
+    fraction = int(percentage / 100 * total_pixels)
+
+    # perform contrast stretch on all channels
+    channels = image_data.shape[2]
+    for i in range(channels):
+
+        temp = image_data[:, :, i]
+
+        hist, _ = np.histogram(temp, range=[0, 255], bins=256)
+
+        min_thresh, max_thresh = get_threshold(hist, fraction)
+
+        temp[temp >= max_thresh] = 255
+        temp[temp <= min_thresh] = 0
+
+        temp_mask_inv = np.logical_or((temp == 255), (temp == 0))
+        temp_mask = np.logical_not(temp_mask_inv)
+
+        masked_temp = temp_mask * temp
+        masked_temp_inv = temp_mask_inv * temp
+
+        min_intensity = np.min(masked_temp[np.nonzero(masked_temp)])
+        max_intensity = np.max(masked_temp)
+
+        enhanced_masked_temp = (
+            masked_temp * (255 / (max_intensity - min_intensity)))
+
+        enchanced_temp = enhanced_masked_temp + masked_temp_inv
+
+        enhanced_image[:, :, i] = enchanced_temp
+
+    return enhanced_image
+
+
+def get_threshold(hist, fraction):
+
+    int_sum = 0
+
+    min_int = 0
+    max_int = 255
+
+    while int_sum < fraction:
+        min_int += 1
+        int_sum += hist[min_int]
+
+    int_sum = 0
+
+    while int_sum < fraction:
+        max_int -= 1
+        int_sum += hist[max_int]
+
+    return [min_int, max_int]
 
 
 if __name__ == "__main__":
