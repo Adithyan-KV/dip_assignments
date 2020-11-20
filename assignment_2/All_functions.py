@@ -37,8 +37,7 @@ def main():
     # plot_side_by_side(low_light_1, resized_image, 'resizing')
     # clahe_image = contrast_limited_histogram_equalize('StoneFace.png')
     # plot_side_by_side(stone_face, clahe_image, 'tite')
-    clahe_overlap_image = clahe_with_overlap('StoneFace.png')
-    # clahe_overlap_image = CLAHE_smooth('StoneFace.png', 40)
+    clahe_overlap_image = clahe_with_overlap('StoneFace.png', 0.25)
     plot_side_by_side(stone_face, clahe_overlap_image, 'CLAHE overlap')
     # rotated_image = rotate('MathBooks.png', 15)
     # plt.imshow(rotated_image)
@@ -99,13 +98,14 @@ def contrast_limited_histogram_equalize(image_path):
 
 
 def contrast_limit_histogram(hist_freq):
-    threshold = 40
+    threshold = 0.01 * hist_freq.sum()
     # maximum iterations for which program can run to equalize histogram
     # to prevent infinite loops for very narrow histograms
     max_iterations = 100
     size = np.count_nonzero(hist_freq)
     for _ in range(max_iterations):
         if(hist_freq > threshold).sum() > 0:
+            # distribute the pixels over threshold equally over other values
             excess = (hist_freq[hist_freq > threshold] - threshold).sum()
             distribution_factor = excess // size
             hist_freq = hist_freq.clip(None, threshold)
@@ -117,20 +117,17 @@ def contrast_limit_histogram(hist_freq):
     return hist_freq
 
 
-def clahe_with_overlap(image_path):
+def clahe_with_overlap(image_path, overlap=0.25):
     image_data = io.imread(image_path)
     num_bins = 256
-    overlap = 0.25
-
     rows, columns = image_data.shape
     tiles = 8
 
+    # calculating some values to split the image into blocks
     block_size_x = math.ceil(columns / (tiles - (tiles * overlap) + overlap))
     block_size_y = math.ceil(rows / (tiles - (tiles * overlap) + overlap))
-
     overlap_x = math.ceil(block_size_x * overlap)
     overlap_y = math.ceil(block_size_y * overlap)
-
     non_overlap_x = block_size_x - overlap_x
     non_overlap_y = block_size_y - overlap_y
 
@@ -140,6 +137,7 @@ def clahe_with_overlap(image_path):
     # The final contrast enhanced image
     enhanced_image = np.zeros_like(image_data, dtype=np.float64)
 
+    # Perform histogram equalization on all tiles
     for i in range(tiles):
         for j in range(tiles):
 
@@ -155,10 +153,13 @@ def clahe_with_overlap(image_path):
             cdf = cl_hist.cumsum() / total_pixels
             enhanced_block = np.zeros_like(block, dtype=np.float64)
             enhanced_block = cdf[block] * 255
+            # add the present enhanced block to the total image
             enhanced_image[start_i:stop_i,
                            start_j: stop_j] += enhanced_block
+            # keep track of the overlapping areas
             overlap_map[start_i: stop_i, start_j: stop_j] += 1
 
+    # take average in areas with overlap
     enhanced_image = np.divide(enhanced_image, overlap_map)
 
     return enhanced_image
