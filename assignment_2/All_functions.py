@@ -33,8 +33,8 @@ def main():
     # plot_side_by_side(stone_face, histogram_eq_image_4, 'hist eq')
     # saturated_stretch_image = saturated_contrast_stretch('MathBooks.png')
     # plot_side_by_side(books, saturated_stretch_image, 'saturated stretch')
-    resized_image = resize('LowLight_1.png', 2)
-    plot_side_by_side(low_light_1, resized_image, 'resizing')
+    # resized_image = resize('LowLight_1.png', 2)
+    # plot_side_by_side(low_light_1, resized_image, 'resizing')
     resized_image_2 = resize('LowLight_1.png', 2, interpolation='bilinear')
     plot_side_by_side(low_light_1, resized_image_2, 'resizing')
     # clahe_image = contrast_limited_histogram_equalize('StoneFace.png')
@@ -243,23 +243,24 @@ def resize(image_path, resize_factor, interpolation="nearest"):
                 y = int(i / resize_factor)
                 x = int(j / resize_factor)
 
-                # four neighboring image cordinates
-                f = np.array([image_data[y, x], image_data[y + 1, x],
-                              image_data[y, x + 1], image_data[y + 1, x + 1]])
-                n = np.array([[1, y, x, y * x], [1, y + 1, x, (y + 1) * x],
-                              [1, y, x + 1, y * (x + 1)], [1, y + 1, x + 1, (y + 1) * (x + 1)]])
+                if 0 < y < rows - 1 and 0 < x < columns - 1:
+                    # four neighboring image cordinates
+                    f = np.array([image_data[y, x], image_data[y + 1, x],
+                                  image_data[y, x + 1], image_data[y + 1, x + 1]])
+                    n = np.array([[1, y, x, y * x], [1, y + 1, x, (y + 1) * x],
+                                  [1, y, x + 1, y * (x + 1)], [1, y + 1, x + 1, (y + 1) * (x + 1)]])
 
-                # if the inverse exists
-                if np.linalg.det(f) != 0:
-                    # solve and find bilinear weights
-                    A = np.linalg.solve(f, n)
-                    resized_image[i, j] = A[0] + A[1] * \
-                        y + A[2] * x + A[3] * x * y
+                    # if the inverse exists
+                    if np.linalg.det(n) != 0:
+                        # solve and find bilinear weights
+                        A = np.linalg.solve(n, f)
+                        resized_image[i, j] = A[0] + A[1] * \
+                            y + A[2] * x + A[3] * x * y
 
-                # if it cannot be solved for bilinear weights
-                else:
-                    # set pixel as average of surrounding pixels
-                    resized_image[i, j] = b.sum() / 4
+                    # if it cannot be solved for bilinear weights
+                    else:
+                        # set pixel as average of surrounding pixels
+                        resized_image[i, j] = f.sum() / 4
     return resized_image
 
 
