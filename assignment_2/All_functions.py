@@ -16,10 +16,24 @@ def plot_side_by_side(image_1, image_2, title):
 
 def linear_contrast_stretch(image_path):
     image_data = io.imread(image_path)
-    A = np.max(image_data)
-    k = 255
-    gain = k / A
-    stretched_image = image_data * gain
+    # accounting for images with multiple channels
+    if len(image_data.shape) > 2:
+        num_channels = image_data.shape[2]
+    else:
+        num_channels = 1
+    stretched_image = np.zeros_like(image_data)
+    # perform linear stretch over all channels
+    for channel in range(num_channels):
+        if num_channels > 2:
+            A = np.max(image_data[:, :, channel])
+            k = 255
+            gain = k / A
+            stretched_image[:, :, channel] = image_data[:, :, channel] * gain
+        else:
+            A = np.max(image_data)
+            k = 255
+            gain = k / A
+            stretched_image = image_data * gain
     return stretched_image
 
 
@@ -401,13 +415,16 @@ def main():
     plt.show()
 
     # question 2
+    linear_stretched_books = linear_contrast_stretch('MathBooks.png')
     saturated_stretch_image = saturated_contrast_stretch('MathBooks.png')
-    fig, plots = plt.subplots(2)
+    fig, plots = plt.subplots(3)
     fig.suptitle('Question 2: Saturated contrast stretch')
     plots[0].imshow(books, vmax=255, vmin=0)
     plots[0].set_title('Original image')
-    plots[1].imshow(saturated_stretch_image, vmax=255, vmin=0)
-    plots[1].set_title('Contrast stretched image')
+    plots[1].imshow(linear_stretched_books, vmax=255, vmin=0)
+    plots[1].set_title('Linear stretched image')
+    plots[2].imshow(saturated_stretch_image, vmax=255, vmin=0)
+    plots[2].set_title('Contrast stretched image')
     plt.show()
 
     # question 3
