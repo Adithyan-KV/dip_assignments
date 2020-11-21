@@ -4,48 +4,6 @@ import math
 import numpy as np
 
 
-def main():
-    low_light_1 = io.imread('LowLight_1.png')
-    low_light_2 = io.imread('LowLight_2.png')
-    low_light_3 = io.imread('LowLight_3.png')
-    stone_face = io.imread('StoneFace.png')
-    hazy = io.imread('Hazy.png')
-    books = io.imread('MathBooks.png')
-    linear_stretched_img_1 = linear_contrast_stretch('LowLight_1.png')
-    linear_stretched_img_2 = linear_contrast_stretch('LowLight_2.png')
-    # plot_side_by_side(low_light_1, linear_stretched_img_1, 'Linear stretch')
-    # plot_side_by_side(low_light_2, linear_stretched_img_2, 'Linear stretch')
-
-    power_stretched_image_1 = power_law_contrast_stretch(
-        'LowLight_2.png', 1 / 2)
-    power_stretched_image_2 = power_law_contrast_stretch('Hazy.png', 2)
-    # plot_side_by_side(low_light_2, power_stretched_image_1,
-    #   'Power law stretch')
-    # plot_side_by_side(hazy, power_stretched_image_2,
-    #   'Power law stretch')
-    histogram_eq_image_1 = histogram_equalize('LowLight_2.png')
-    # plot_side_by_side(low_light_2, histogram_eq_image_1, 'hist eq')
-    histogram_eq_image_2 = histogram_equalize('LowLight_3.png')
-    histogram_eq_image_3 = histogram_equalize('Hazy.png')
-    histogram_eq_image_4 = histogram_equalize('StoneFace.png')
-    # plot_side_by_side(low_light_3, histogram_eq_image_2, 'hist eq')
-    # plot_side_by_side(hazy, histogram_eq_image_3, 'hist eq')
-    # plot_side_by_side(stone_face, histogram_eq_image_4, 'hist eq')
-    # saturated_stretch_image = saturated_contrast_stretch('MathBooks.png')
-    # plot_side_by_side(books, saturated_stretch_image, 'saturated stretch')
-    # resized_image = resize('LowLight_1.png', 2)
-    # plot_side_by_side(low_light_1, resized_image, 'resizing')
-    # resized_image_2 = resize('LowLight_1.png', 2, interpolation='bilinear')
-    # plot_side_by_side(low_light_1, resized_image_2, 'resizing')
-    # clahe_image = contrast_limited_histogram_equalize('StoneFace.png')
-    # plot_side_by_side(stone_face, clahe_image, 'tite')
-    # clahe_overlap_image = clahe_with_overlap('StoneFace.png', 0.25)
-    # plot_side_by_side(stone_face, clahe_overlap_image, 'CLAHE overlap')
-    rotated_image = rotate('StoneFace.png', 90, interpolation='bilinear')
-    plt.imshow(rotated_image, cmap='gray')
-    plt.show()
-
-
 def plot_side_by_side(image_1, image_2, title):
     fig, plots = plt.subplots(1, 2)
     fig.suptitle(title)
@@ -89,13 +47,14 @@ def contrast_limited_histogram_equalize(image_path):
     x_size = int(columns / 8)
     for i in range(0, rows, y_size):
         for j in range(0, columns, x_size):
-            block = image_data[i:i + y_size, j:j + x_size]
+            block = image_data[i:min(i + y_size, rows),
+                               j: min(j + x_size, columns)]
             total_pixels = block.size
             hist, _ = np.histogram(block, bins=256, range=(0, 255))
             cl_hist = contrast_limit_histogram(hist)
             cdf = cl_hist.cumsum() / total_pixels
             enhanced_block = cdf[block] * 255
-            enhanced_image[i:i + y_size, j:j + x_size] = enhanced_block
+            enhanced_image[i: i + y_size, j: j + x_size] = enhanced_block
     return enhanced_image
 
 
@@ -148,7 +107,7 @@ def clahe_with_overlap(image_path, overlap=0.25):
             start_j = j * non_overlap_x
             stop_j = min(start_j + block_size_x, columns)
 
-            block = image_data[start_i:stop_i, start_j:stop_j]
+            block = image_data[start_i: stop_i, start_j: stop_j]
             total_pixels = block.size
             hist, _ = np.histogram(block, bins=num_bins, range=(0, 255))
             cl_hist = contrast_limit_histogram(hist)
@@ -156,7 +115,7 @@ def clahe_with_overlap(image_path, overlap=0.25):
             enhanced_block = np.zeros_like(block, dtype=np.float64)
             enhanced_block = cdf[block] * 255
             # add the present enhanced block to the total image
-            enhanced_image[start_i:stop_i,
+            enhanced_image[start_i: stop_i,
                            start_j: stop_j] += enhanced_block
             # keep track of the overlapping areas
             overlap_map[start_i: stop_i, start_j: stop_j] += 1
@@ -171,35 +130,38 @@ def saturated_contrast_stretch(image_path):
     image_data = io.imread(image_path)
     enhanced_image = np.zeros_like(image_data)
     total_pixels = image_data.size
-    percentage = 0.5
+    percentage = 1
     fraction = int(percentage / 100 * total_pixels)
 
     # perform contrast stretch on all channels
-    channels = image_data.shape[2]
-    for i in range(channels):
+    num_channels = image_data.shape[2]
+    for i in range(num_channels):
 
-        temp = image_data[:, :, i]
+        channel = image_data[:, :, i]
 
-        hist, _ = np.histogram(temp, range=[0, 255], bins=256)
-
-        min_thresh, max_thresh = get_threshold(hist, fraction)
+        hist, _ = np.histogram(channel, range=[0, 255], bins=256)
 
         # set pixels above and below a threshold to white and black
-        temp[temp >= max_thresh] = 255
-        temp[temp <= min_thresh] = 0
+        min_thresh, max_thresh = get_threshold(hist, fraction)
+        channel[channel >= max_thresh] = 255
+        channel[channel <= min_thresh] = 0
 
-        temp_mask_inv = np.logical_or((temp == 255), (temp == 0))
-        temp_mask = np.logical_not(temp_mask_inv)
-        masked_temp = temp_mask * temp
-        masked_temp_inv = temp_mask_inv * temp
+        # masking out all the pixels that have 0 or 255 value
+        mask_inverse = np.logical_or((channel == 255), (channel == 0))
+        mask = np.logical_not(mask_inverse)
+        masked_channel = mask * channel
+        inverse_masked_channel = mask_inverse * channel
 
-        min_intensity = np.min(masked_temp[np.nonzero(masked_temp)])
-        max_intensity = np.max(masked_temp)
+        # performing contrast stretch on the rest
+        min_intensity = np.min(masked_channel[np.nonzero(masked_channel)])
+        max_intensity = np.max(masked_channel)
+        gain = 255 / (max_intensity - min_intensity)
+        enhanced_masked_channel = (masked_channel * gain)
 
-        enhanced_masked_temp = (
-            masked_temp * (255 / (max_intensity - min_intensity)))
-        enchanced_temp = enhanced_masked_temp + masked_temp_inv
-        enhanced_image[:, :, i] = enchanced_temp
+        # add back masked 0 and 255 values
+        enhanced_channel = enhanced_masked_channel + inverse_masked_channel
+        enhanced_channel = enhanced_channel.clip(None, 255)
+        enhanced_image[:, :, i] = enhanced_channel
 
     return enhanced_image
 
@@ -207,16 +169,16 @@ def saturated_contrast_stretch(image_path):
 def get_threshold(hist, fraction):
 
     int_sum = 0
-    min_int = 0
-    max_int = 255
+    minimum = 0
     while int_sum < fraction:
-        min_int += 1
-        int_sum += hist[min_int]
+        minimum += 1
+        int_sum += hist[minimum]
     int_sum = 0
+    maximum = 255
     while int_sum < fraction:
-        max_int -= 1
-        int_sum += hist[max_int]
-    return [min_int, max_int]
+        maximum -= 1
+        int_sum += hist[maximum]
+    return (minimum, maximum)
 
 
 def resize(image_path, resize_factor, interpolation="nearest"):
@@ -253,9 +215,9 @@ def resize(image_path, resize_factor, interpolation="nearest"):
                                   image_data[y_floor, x_ceil],
                                   image_data[y_ceil, x_ceil]],)
                     n = np.array([[1, y_floor, x_floor, y_floor * x_floor],
-                                  [1, y_ceil, x_floor, (y_ceil) * x_floor],
-                                  [1, y_floor, x_ceil, y_floor * (x_ceil)],
-                                  [1, y_ceil, x_ceil, (y_ceil) * (x_ceil)]])
+                                  [1, y_ceil, x_floor, y_ceil * x_floor],
+                                  [1, y_floor, x_ceil, y_floor * x_ceil],
+                                  [1, y_ceil, x_ceil, y_ceil * x_ceil]])
 
                     # if the inverse exists
                     if np.linalg.det(n) != 0:
@@ -275,7 +237,7 @@ def resize(image_path, resize_factor, interpolation="nearest"):
     return resized_image
 
 
-def rotate(image_path, angle, interpolation="nearest"):
+def ImgRotate(image_path, angle, interpolation="nearest"):
     image_data = io.imread(image_path)
     image_data = image_data
 
@@ -304,7 +266,7 @@ def rotate(image_path, angle, interpolation="nearest"):
 
             # transform to image center coordinates
             y = origin_h_rot - i
-            x = origin_w_rot - j
+            x = j - origin_w_rot
 
             # corresponding coords in rotated coordinates
             y_rot = y * cos - x * sin
@@ -330,10 +292,8 @@ def rotate(image_path, angle, interpolation="nearest"):
 
                         # used to solve for bilinear weights
                         n = np.array([[1, i_floor, j_floor, i_floor * j_floor],
-                                      [1, i_floor, j_ceil,
-                                          i_floor * j_ceil],
-                                      [1, i_ceil, j_floor,
-                                          i_ceil * j_floor],
+                                      [1, i_floor, j_ceil, i_floor * j_ceil],
+                                      [1, i_ceil, j_floor, i_ceil * j_floor],
                                       [1, i_ceil, j_ceil, i_ceil * j_ceil]])
                         f = np.array([[image_data[i_floor, j_floor]],
                                       [image_data[i_floor, j_ceil]],
@@ -352,6 +312,135 @@ def rotate(image_path, angle, interpolation="nearest"):
                             # assign average value of surrounding pixels
                             rotated_image[i, j] = f.sum() / 4
     return rotated_image
+
+
+def main():
+
+    # loading in all the images
+    low_light_1 = io.imread('LowLight_1.png')
+    low_light_2 = io.imread('LowLight_2.png')
+    low_light_3 = io.imread('LowLight_3.png')
+    stone_face = io.imread('StoneFace.png')
+    hazy = io.imread('Hazy.png')
+    books = io.imread('MathBooks.png')
+
+    # question 1 (a)
+    linear_stretched_img_1 = linear_contrast_stretch('LowLight_1.png')
+    linear_stretched_img_2 = linear_contrast_stretch('LowLight_2.png')
+    fig, plots = plt.subplots(2, 2)
+    fig.suptitle('Question 1:Linear contrast stretch')
+    plots[0, 0].imshow(low_light_1, cmap='gray', vmax=255, vmin=0)
+    plots[0, 0].set_title('Original image')
+    plots[0, 1].imshow(linear_stretched_img_1, cmap='gray', vmax=255, vmin=0)
+    plots[0, 1].set_title('Contrast enhanced')
+    plots[1, 0].imshow(low_light_2, cmap='gray', vmin=0, vmax=255)
+    plots[1, 0].set_title('Original image')
+    plots[1, 1].imshow(linear_stretched_img_2, cmap='gray', vmax=255, vmin=0)
+    plots[1, 1].set_title('Contrast enhanced')
+    plt.show()
+
+    # question 1 (b)
+    power_stretched_image_1 = power_law_contrast_stretch(
+        'LowLight_1.png', 1 / 2)
+    power_stretched_image_2 = power_law_contrast_stretch(
+        'LowLight_2.png', 1 / 2)
+    power_stretched_image_3 = power_law_contrast_stretch('Hazy.png', 3)
+    fig, plots = plt.subplots(3, 2)
+    fig.suptitle('Question 1:Power Law contrast stretch')
+    plots[0, 0].imshow(low_light_1, cmap='gray', vmax=255, vmin=0)
+    plots[0, 0].set_title('Original image')
+    plots[0, 1].imshow(power_stretched_image_1, cmap='gray', vmax=255, vmin=0)
+    plots[0, 1].set_title('Contrast enhanced')
+    plots[1, 0].imshow(low_light_2, cmap='gray', vmin=0, vmax=255)
+    plots[1, 0].set_title('Original image')
+    plots[1, 1].imshow(power_stretched_image_2, cmap='gray', vmax=255, vmin=0)
+    plots[1, 1].set_title('Contrast enhanced')
+    plots[2, 0].imshow(hazy, cmap='gray', vmin=0, vmax=255)
+    plots[2, 0].set_title('Original image')
+    plots[2, 1].imshow(power_stretched_image_3, cmap='gray', vmax=255, vmin=0)
+    plots[2, 1].set_title('Contrast enhanced')
+    plt.show()
+
+    # question 1 (c)
+
+    histogram_eq_image_1 = histogram_equalize('LowLight_2.png')
+    histogram_eq_image_2 = histogram_equalize('Hazy.png')
+    histogram_eq_image_3 = histogram_equalize('StoneFace.png')
+    histogram_eq_image_4 = histogram_equalize('LowLight_3.png')
+    fig, plots = plt.subplots(4, 2)
+    fig.suptitle('Question 1:Histogram equalization')
+    plots[0, 0].imshow(low_light_2, cmap='gray', vmax=255, vmin=0)
+    plots[0, 0].set_title('Original image')
+    plots[0, 1].imshow(histogram_eq_image_1, cmap='gray', vmax=255, vmin=0)
+    plots[0, 1].set_title('Contrast enhanced')
+    plots[1, 0].imshow(hazy, cmap='gray', vmin=0, vmax=255)
+    plots[1, 0].set_title('Original image')
+    plots[1, 1].imshow(histogram_eq_image_2, cmap='gray', vmax=255, vmin=0)
+    plots[1, 1].set_title('Contrast enhanced')
+    plots[2, 0].imshow(stone_face, cmap='gray', vmin=0, vmax=255)
+    plots[2, 0].set_title('Original image')
+    plots[2, 1].imshow(histogram_eq_image_3, cmap='gray', vmax=255, vmin=0)
+    plots[2, 1].set_title('Contrast enhanced')
+    plots[3, 0].imshow(low_light_3, cmap='gray', vmin=0, vmax=255)
+    plots[3, 0].set_title('Original image')
+    plots[3, 1].imshow(histogram_eq_image_4, cmap='gray', vmax=255, vmin=0)
+    plots[3, 1].set_title('Contrast enhanced')
+    plt.show()
+
+    # question 1 (d)
+    clahe_image = contrast_limited_histogram_equalize('StoneFace.png')
+    clahe_overlap_image = clahe_with_overlap('StoneFace.png', 0.25)
+    fig, plots = plt.subplots(1, 3)
+    fig.suptitle('Question 1 (d):CLAHE')
+    plots[0].imshow(stone_face, cmap='gray', vmax=255, vmin=0)
+    plots[0].set_title('Original image')
+    plots[1].imshow(clahe_image, cmap='gray', vmax=255, vmin=0)
+    plots[1].set_title('CLAHE-without overlap')
+    plots[2].imshow(clahe_overlap_image, cmap='gray', vmin=0, vmax=255)
+    plots[2].set_title('CLAHE- with overlap(25%)')
+    plt.show()
+
+    # question 2
+    saturated_stretch_image = saturated_contrast_stretch('MathBooks.png')
+    fig, plots = plt.subplots(2)
+    fig.suptitle('Question 2: Saturated contrast stretch')
+    plots[0].imshow(books, vmax=255, vmin=0)
+    plots[0].set_title('Original image')
+    plots[1].imshow(saturated_stretch_image, vmax=255, vmin=0)
+    plots[1].set_title('Contrast stretched image')
+    plt.show()
+
+    # question 3
+    resizing_factor = 2
+    resized_image = resize('StoneFace.png', resizing_factor)
+    resized_image_2 = resize(
+        'StoneFace.png', resizing_factor, interpolation='bilinear')
+    fig, plots = plt.subplots(1, 3, gridspec_kw={'width_ratios': [
+        1, resizing_factor, resizing_factor], })
+    fig.suptitle('Question 3:Resize image')
+    plots[0].imshow(stone_face, cmap='gray', vmax=255, vmin=0)
+    plots[0].set_title('Original image')
+    plots[1].imshow(resized_image, cmap='gray', vmax=255, vmin=0)
+    plots[1].set_title(
+        f'resized {resizing_factor}x:Nearest neighbor')
+    plots[2].imshow(resized_image_2, cmap='gray', vmin=0, vmax=255)
+    plots[2].set_title(f'resized {resizing_factor}x:Bilinear')
+    plt.show()
+
+    # question 4
+    angle = 45
+    rotated_image = ImgRotate('StoneFace.png', angle, interpolation='nearest')
+    rotated_image_2 = ImgRotate(
+        'StoneFace.png', angle, interpolation='bilinear')
+    fig, plots = plt.subplots(1, 3)
+    fig.suptitle('Question 4:Rotate image')
+    plots[0].imshow(stone_face, cmap='gray', vmax=255, vmin=0)
+    plots[0].set_title('Original image')
+    plots[1].imshow(rotated_image, cmap='gray', vmax=255, vmin=0)
+    plots[1].set_title(f'Rotated by {angle} degrees: Nearest neighbor')
+    plots[2].imshow(rotated_image_2, cmap='gray', vmin=0, vmax=255)
+    plots[2].set_title(f'Rotated by {angle} degrees: Bilinear')
+    plt.show()
 
 
 if __name__ == "__main__":
