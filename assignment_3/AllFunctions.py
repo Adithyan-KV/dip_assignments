@@ -48,46 +48,63 @@ def main():
     # plots[1].set_title('DFT spectrum')
     # plt.show()
 
-    # Question 2(b)
     char_image = io.imread('./characters.tif')
-    dft_data, dft_spectrum = dft(char_image)
-    filtered_dft, filtered_spectrum = filter_ideal_low_pass(dft_data, 100)
-    filtered_image = inverse_dft(filtered_dft)
-    fig, plots = plt.subplots(2, 2)
-    fig.suptitle('Question 2 (b):Ideal low pass filtering')
-    plots[0, 0].imshow(char_image, cmap='gray')
-    plots[0, 0].set_title('Original image')
-    plots[0, 1].imshow(dft_spectrum, cmap='gray')
-    plots[0, 1].set_title('Centered DFT spectrum')
-    plots[1, 0].imshow(filtered_spectrum, cmap='gray')
-    plots[1, 0].set_title('Low pass filtered Spectrum')
-    plots[1, 1].imshow(filtered_image, cmap='gray')
-    plots[1, 1].set_title('Filtered Image')
-    plt.show()
+    # # Question 2(b)
+    # dft_data, dft_spectrum = dft(char_image)
+    # filtered_dft, filtered_spectrum = filter_ideal_low_pass(dft_data, 100)
+    # filtered_image = inverse_dft(filtered_dft)
+    # fig, plots = plt.subplots(2, 2)
+    # fig.suptitle('Question 2 (b):Ideal low pass filtering')
+    # plots[0, 0].imshow(char_image, cmap='gray')
+    # plots[0, 0].set_title('Original image')
+    # plots[0, 1].imshow(dft_spectrum, cmap='gray')
+    # plots[0, 1].set_title('Centered DFT spectrum')
+    # plots[1, 0].imshow(filtered_spectrum, cmap='gray')
+    # plots[1, 0].set_title('Low pass filtered Spectrum')
+    # plots[1, 1].imshow(filtered_image, cmap='gray')
+    # plots[1, 1].set_title('Filtered Image')
+    # plt.show()
 
-    # Question 2(c)
-    gauss_filt_dft, gauss_filt_spectrum = filter_gaussian_low_pass(
-        dft_data, 100)
-    gaussian_filtered_image = inverse_dft(gauss_filt_dft)
-    fig, plots = plt.subplots(2, 2)
-    fig.suptitle('Question 2 (b):Gaussian low pass filtering')
-    plots[0, 0].imshow(char_image, cmap='gray')
-    plots[0, 0].set_title('Original image')
-    plots[0, 1].imshow(dft_spectrum, cmap='gray')
-    plots[0, 1].set_title('Centered DFT spectrum')
-    plots[1, 0].imshow(gauss_filt_spectrum, cmap='gray')
-    plots[1, 0].set_title('Low pass filtered Spectrum')
-    plots[1, 1].imshow(gaussian_filtered_image, cmap='gray')
-    plots[1, 1].set_title('Filtered Image')
-    plt.show()
+    # # Question 2(c)
+    # gauss_filt_dft, gauss_filt_spectrum = filter_gaussian_low_pass(
+    #     dft_data, 100)
+    # gaussian_filtered_image = inverse_dft(gauss_filt_dft)
+    # fig, plots = plt.subplots(2, 2)
+    # fig.suptitle('Question 2 (b):Gaussian low pass filtering')
+    # plots[0, 0].imshow(char_image, cmap='gray')
+    # plots[0, 0].set_title('Original image')
+    # plots[0, 1].imshow(dft_spectrum, cmap='gray')
+    # plots[0, 1].set_title('Centered DFT spectrum')
+    # plots[1, 0].imshow(gauss_filt_spectrum, cmap='gray')
+    # plots[1, 0].set_title('Low pass filtered Spectrum')
+    # plots[1, 1].imshow(gaussian_filtered_image, cmap='gray')
+    # plots[1, 1].set_title('Filtered Image')
+    # plt.show()
 
-    # comparing ideal and gaussian lpf results
-    fig, plots = plt.subplots(1, 2)
-    fig.suptitle('Comparing Ideal vs Gaussian LPF')
-    plots[0].imshow(filtered_image, cmap='gray')
-    plots[0].set_title('Result of Ideal LPF (D_0 = 100)')
-    plots[1].imshow(gaussian_filtered_image, cmap='gray')
-    plots[1].set_title('Result of Gaussian LPF (D_0 = 100)')
+    # # comparing ideal and gaussian lpf results
+    # fig, plots = plt.subplots(1, 2)
+    # fig.suptitle('Comparing Ideal vs Gaussian LPF')
+    # plots[0].imshow(filtered_image, cmap='gray')
+    # plots[0].set_title('Result of Ideal LPF (D_0 = 100)')
+    # plots[1].imshow(gaussian_filtered_image, cmap='gray')
+    # plots[1].set_title('Result of Gaussian LPF (D_0 = 100)')
+    # plt.show()
+
+    pet_image = io.imread('./PET_image.tif')
+    pet_dft_data, pet_dft_spectrum = dft(pet_image)
+    pet_filtered_dft, pet_filtered_spectrum = filter_high_pass(
+        pet_dft_data, D_0=200)
+    pet_filtered_image = inverse_dft(pet_filtered_dft)
+    fig, plots = plt.subplots(2, 2)
+    fig.suptitle('PET Image HPF')
+    plots[0, 0].imshow(pet_image, cmap='gray', vmin=0, vmax=255)
+    plots[0, 0].set_title('Original Image')
+    plots[0, 1].imshow(pet_dft_spectrum, cmap='gray')
+    plots[0, 1].set_title('Centered DFT spectrum')
+    plots[1, 0].imshow(pet_filtered_spectrum, cmap='gray')
+    plots[1, 0].set_title('High pass filtered DFT spectrum')
+    plots[1, 1].imshow(pet_filtered_image, cmap='gray')
+    plots[1, 1].set_title('Filtered Image')
     plt.show()
 
 
@@ -170,6 +187,19 @@ def filter_gaussian_low_pass(dft_centered, D_0=100):
         for v in range(Q):
             D = math.sqrt((u - P / 2)**2 + (v - Q / 2)**2)
             H[u, v] = math.exp((-D**2) / (2 * (D_0**2)))
+    filtered_dft = H * dft_centered
+    filtered_spectrum = H * np.log(1 + np.abs(filtered_dft)) * 255
+    return filtered_dft, filtered_spectrum
+
+
+def filter_high_pass(dft_centered, D_0=100, gammaH=130, gammaL=100):
+    H = np.zeros_like(dft_centered, dtype=np.float64)
+    P, Q = dft_centered.shape
+    for u in range(P):
+        for v in range(Q):
+            D = math.sqrt((u - P / 2)**2 + (v - Q / 2)**2)
+            H[u, v] = (gammaH - gammaL) * \
+                (1 - math.exp((-D**2) / (2 * (D_0**2)))) + gammaL
     filtered_dft = H * dft_centered
     filtered_spectrum = H * np.log(1 + np.abs(filtered_dft)) * 255
     return filtered_dft, filtered_spectrum
