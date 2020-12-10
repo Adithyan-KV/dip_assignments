@@ -37,15 +37,30 @@ def main():
     # plots[2].set_title('Sharpened image')
     # plt.show()
 
-    # Question 2(a)
-    sinusoidal_image = generate_sinusoidal_image(1001, 1001)
-    dft_image = dft(sinusoidal_image)
-    fig, plots = plt.subplots(1, 2)
-    fig.suptitle('Question 2 (a):DFT')
-    plots[0].imshow(sinusoidal_image, cmap='gray', vmax=255, vmin=0)
-    plots[0].set_title('Sinusoidal image')
-    plots[1].imshow(dft_image, cmap='gray', vmax=255, vmin=0)
-    plots[1].set_title('DFT spectrum')
+    # # Question 2(a)
+    # sinusoidal_image = generate_sinusoidal_image(1001, 1001)
+    # dft_image = dft(sinusoidal_image)
+    # fig, plots = plt.subplots(1, 2)
+    # fig.suptitle('Question 2 (a):DFT')
+    # plots[0].imshow(sinusoidal_image, cmap='gray', vmax=255, vmin=0)
+    # plots[0].set_title('Sinusoidal image')
+    # plots[1].imshow(dft_image, cmap='gray', vmax=255, vmin=0)
+    # plots[1].set_title('DFT spectrum')
+    # plt.show()
+
+    # Question 2(b)
+    char_image = io.imread('./characters.tif')
+    dft_data, dft_spectrum = dft(char_image)
+    filtered_dft, filtered_spectrum = filter_low_pass(dft_data, 150)
+    filtered_image = inverse_dft(filtered_dft)
+    fig, plots = plt.subplots(1, 3)
+    fig.suptitle('Question 2 (b):Low pass filtering')
+    plots[0].imshow(dft_spectrum, cmap='gray')
+    plots[0].set_title('Centered DFT spectrum')
+    plots[1].imshow(filtered_spectrum, cmap='gray')
+    plots[1].set_title('Low pass filtered Spectrum')
+    plots[2].imshow(filtered_image, cmap='gray')
+    plots[2].set_title('Filtered Image')
     plt.show()
 
 
@@ -91,10 +106,35 @@ def generate_sinusoidal_image(M, N):
 
 def dft(image):
     dft = fft.fft2(image)
-    # dft_centered = fft.fftshift(dft)
-    # dft_spectrum = np.log(1 + np.abs(dft_centered)) * 255
-    dft_spectrum = np.log(1 + np.abs(dft)) * 255
-    return dft_spectrum
+    dft_centered = fft.fftshift(dft)
+    dft_spectrum = np.log(1 + np.abs(dft_centered)) * 255
+    # dft_spectrum = np.log(1 + np.abs(dft)) * 255
+    return dft_centered, dft_spectrum
+
+
+def inverse_dft(dft_data):
+    fft_decentralized = fft.ifftshift(dft_data)
+    # plt.imshow(np.log(1 + np.abs(fft_decentralized)), cmap='gray')
+    # plt.show()
+    idft = fft.ifft2(fft_decentralized)
+    filtered_image = np.abs(idft) * 255
+    return filtered_image
+
+
+def filter_low_pass(dft_centered, D_0=100):
+    H = np.zeros_like(dft_centered)
+    P, Q = dft_centered.shape
+    dft_spectrum = np.log(1 + np.abs(dft_centered)) * 255
+    for u in range(P):
+        for v in range(Q):
+            D = math.sqrt((u - P / 2)**2 + (v - Q / 2)**2)
+            if D > D_0:
+                H[u, v] = 0
+            else:
+                H[u, v] = 1
+    filtered_dft = H * dft_centered
+    filtered_spectrum = np.abs(H) * dft_spectrum
+    return filtered_dft, filtered_spectrum
 
 
 if __name__ == "__main__":
