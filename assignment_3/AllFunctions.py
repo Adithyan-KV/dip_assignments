@@ -1,8 +1,10 @@
+import numpy as np
+import scipy.ndimage as ndi
+import scipy.fft as fft
 import skimage.io as io
 import skimage.filters as flt
-import numpy as np
+import math
 import matplotlib.pyplot as plt
-import scipy.ndimage as ndi
 
 
 def main():
@@ -35,6 +37,17 @@ def main():
     # plots[2].set_title('Sharpened image')
     # plt.show()
 
+    # Question 2(a)
+    sinusoidal_image = generate_sinusoidal_image(1001, 1001)
+    dft_image = dft(sinusoidal_image)
+    fig, plots = plt.subplots(1, 2)
+    fig.suptitle('Question 2 (a):DFT')
+    plots[0].imshow(sinusoidal_image, cmap='gray', vmax=255, vmin=0)
+    plots[0].set_title('Sinusoidal image')
+    plots[1].imshow(dft_image, cmap='gray', vmax=255, vmin=0)
+    plots[1].set_title('DFT spectrum')
+    plt.show()
+
 
 def square_average_filter(image_path, size):
     image_data = io.imread(image_path)
@@ -47,10 +60,9 @@ def high_boost_filter(image):
     original_image = io.imread('./characters.tif')
     blurred_image = flt.gaussian(image, 5) * 255
     mask = image - blurred_image
-    # mask = mask - np.min(mask)
-    plt.imshow(mask, cmap='gray')
-    plt.figure()
-    k_values = np.arange(-10, 10, 0.1)
+    # plt.imshow(mask, cmap='gray')
+    # plt.figure()
+    k_values = np.arange(-4, 4, 0.1)
     errors = np.zeros_like(k_values)
     for i in range(len(k_values)):
         k = k_values[i]
@@ -58,6 +70,7 @@ def high_boost_filter(image):
         error = np.square(sharpened_image - original_image).mean()
         errors[i] = error
     k_optimum = k_values[np.argmin(errors)]
+    print(np.argmin(errors))
     sharpened_image = image + k_optimum * mask
     print(k_optimum)
     plt.plot(k_values, errors)
@@ -66,7 +79,22 @@ def high_boost_filter(image):
 
 
 def generate_sinusoidal_image(M, N):
-    pass
+    sin_image = np.zeros((M, N))
+    rows, columns = sin_image.shape
+    u = 100
+    v = 200
+    for m in range(rows):
+        for n in range(columns):
+            sin_image[m, n] = math.sin(2 * math.pi * (u * m / M + v * n / N))
+    return sin_image * 255
+
+
+def dft(image):
+    dft = fft.fft2(image)
+    # dft_centered = fft.fftshift(dft)
+    # dft_spectrum = np.log(1 + np.abs(dft_centered)) * 255
+    dft_spectrum = np.log(1 + np.abs(dft)) * 255
+    return dft_spectrum
 
 
 if __name__ == "__main__":
