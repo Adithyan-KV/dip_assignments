@@ -8,6 +8,8 @@ import matplotlib.pyplot as plt
 
 
 def main():
+    """The code for displaying the results"""
+
     noisy = io.imread('./noisy.tif')
 
     # Question 1 (a)
@@ -108,6 +110,7 @@ def main():
 
 def square_average_filter(image_path, size):
     image_data = io.imread(image_path)
+    # convolve with averaging kernel of required size
     kernel = np.ones((size, size)) / (size**2)
     denoised_image = ndi.convolve(image_data, kernel, mode='reflect')
     return denoised_image
@@ -153,14 +156,11 @@ def dft(image):
     dft = fft.fft2(image)
     dft_centered = fft.fftshift(dft)
     dft_spectrum = np.log(1 + np.abs(dft_centered)) * 255
-    # dft_spectrum = np.log(1 + np.abs(dft)) * 255
     return dft_centered, dft_spectrum
 
 
 def inverse_dft(dft_data):
     fft_decentralized = fft.ifftshift(dft_data)
-    # plt.imshow(np.log(1 + np.abs(fft_decentralized)), cmap='gray')
-    # plt.show()
     idft = fft.ifft2(fft_decentralized)
     filtered_image = np.abs(idft) * 255
     return filtered_image
@@ -169,6 +169,7 @@ def inverse_dft(dft_data):
 def filter_ideal_low_pass(dft_centered, D_0=100):
     H = np.zeros_like(dft_centered, dtype=np.float64)
     P, Q = dft_centered.shape
+    # calculate the low pass filter
     for u in range(P):
         for v in range(Q):
             D = math.sqrt((u - P / 2)**2 + (v - Q / 2)**2)
@@ -176,6 +177,7 @@ def filter_ideal_low_pass(dft_centered, D_0=100):
                 H[u, v] = 0
             else:
                 H[u, v] = 1
+    # apply the filter
     filtered_dft = H * dft_centered
     filtered_spectrum = H * np.log(1 + np.abs(filtered_dft)) * 255
     return filtered_dft, filtered_spectrum
@@ -184,6 +186,7 @@ def filter_ideal_low_pass(dft_centered, D_0=100):
 def filter_gaussian_low_pass(dft_centered, D_0=100):
     H = np.zeros_like(dft_centered, dtype=np.float64)
     P, Q = dft_centered.shape
+    # calculate the gaussian low pass filter
     for u in range(P):
         for v in range(Q):
             D = math.sqrt((u - P / 2)**2 + (v - Q / 2)**2)
