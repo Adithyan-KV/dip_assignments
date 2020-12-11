@@ -26,12 +26,12 @@ def main():
     # plots[3].set_title('Size = 15')
     # plt.show()
 
-    sharpened = high_boost_filter(denoised_2)
+    denoised, sharpened = high_boost_filter('./noisy.tif')
     fig, plots = plt.subplots(1, 3)
     fig.suptitle('Question 1 (b):Sharpening')
     plots[0].imshow(noisy, cmap='gray', vmax=255, vmin=0)
     plots[0].set_title('Original image')
-    plots[1].imshow(denoised_2, cmap='gray', vmax=255, vmin=0)
+    plots[1].imshow(denoised, cmap='gray', vmax=255, vmin=0)
     plots[1].set_title('Denoised image')
     plots[2].imshow(sharpened, cmap='gray', vmax=255, vmin=0)
     plots[2].set_title('Sharpened image')
@@ -113,26 +113,28 @@ def square_average_filter(image_path, size):
     return denoised_image
 
 
-def high_boost_filter(image):
+def high_boost_filter(image_path):
+    # the denoised and then blurred images
     reference_image = io.imread('./characters.tif')
-    blurred_image = flt.gaussian(image, 5)
-    mask = image - blurred_image
-    # plt.imshow(255 - mask, cmap='gray')
-    # plt.show()
-    k_values = np.arange(-4, 4, 0.1)
+    denoised_image = square_average_filter('./noisy.tif', 10)
+    blurred_image = flt.gaussian(denoised_image, 3) * 255
+
+    # the unsharp mask
+    mask = (denoised_image - blurred_image).astype(np.int64)
+
+    # optimizing k value for mse
+    k_values = np.arange(-10, 10, 0.5)
     errors = np.zeros_like(k_values)
     for i in range(len(k_values)):
-        k = k_values[i]
-        sharpened_image = image + k * mask
-        # sharpened_image = full_scale_contrast_stretch(sharpened_image)
+        sharpened_image = denoised_image + k_values[i] * mask
         error = np.square(sharpened_image - reference_image).mean()
         errors[i] = error
     k_optimum = k_values[np.argmin(errors)]
-    print(k_optimum)
-    plt.plot(k_values, errors)
-    plt.show()
-    sharpened_image = image + k_optimum * mask
-    return sharpened_image
+
+    # applying the sharpening
+    filtered_image = denoised_image + k_optimum * mask
+    filtered_image = filtered_image.clip(0, 255)
+    return denoised_image, filtered_image
 
 
 def generate_sinusoidal_image(M, N):
