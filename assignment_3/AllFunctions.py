@@ -26,16 +26,16 @@ def main():
     # plots[3].set_title('Size = 15')
     # plt.show()
 
-    # sharpened = high_boost_filter(denoised_2)
-    # fig, plots = plt.subplots(1, 3)
-    # fig.suptitle('Question 1 (b):Sharpening')
-    # plots[0].imshow(noisy, cmap='gray', vmax=255, vmin=0)
-    # plots[0].set_title('Original image')
-    # plots[1].imshow(denoised_2, cmap='gray', vmax=255, vmin=0)
-    # plots[1].set_title('Denoised image')
-    # plots[2].imshow(sharpened, cmap='gray', vmax=255, vmin=0)
-    # plots[2].set_title('Sharpened image')
-    # plt.show()
+    sharpened = high_boost_filter(denoised_2)
+    fig, plots = plt.subplots(1, 3)
+    fig.suptitle('Question 1 (b):Sharpening')
+    plots[0].imshow(noisy, cmap='gray', vmax=255, vmin=0)
+    plots[0].set_title('Original image')
+    plots[1].imshow(denoised_2, cmap='gray', vmax=255, vmin=0)
+    plots[1].set_title('Denoised image')
+    plots[2].imshow(sharpened, cmap='gray', vmax=255, vmin=0)
+    plots[2].set_title('Sharpened image')
+    plt.show()
 
     # # Question 2(a)
     # sinusoidal_image = generate_sinusoidal_image(1001, 1001)
@@ -90,20 +90,20 @@ def main():
     # plots[1].set_title('Result of Gaussian LPF (D_0 = 100)')
     # plt.show()
 
-    # Question 3
-    pet_image = io.imread('./PET_image.tif').astype(np.int64)
-    spectrum, fil_spectrum, fil_image = homomorphic_filter('./PET_image.tif')
-    fig, plots = plt.subplots(2, 2)
-    fig.suptitle('PET Image HPF')
-    plots[0, 0].imshow(pet_image, cmap='gray', vmin=0, vmax=255)
-    plots[0, 0].set_title('Original Image')
-    plots[0, 1].imshow(spectrum, cmap='gray')
-    plots[0, 1].set_title('Centered DFT spectrum')
-    plots[1, 0].imshow(fil_spectrum, cmap='gray')
-    plots[1, 0].set_title('High pass filtered DFT spectrum')
-    plots[1, 1].imshow(fil_image, cmap='gray')
-    plots[1, 1].set_title('Filtered Image')
-    plt.show()
+    # # Question 3
+    # pet_image = io.imread('./PET_image.tif').astype(np.int64)
+    # spectrum, fil_spectrum, fil_image = homomorphic_filter('./PET_image.tif')
+    # fig, plots = plt.subplots(2, 2)
+    # fig.suptitle('PET Image HPF')
+    # plots[0, 0].imshow(pet_image, cmap='gray', vmin=0, vmax=255)
+    # plots[0, 0].set_title('Original Image')
+    # plots[0, 1].imshow(spectrum, cmap='gray')
+    # plots[0, 1].set_title('Centered DFT spectrum')
+    # plots[1, 0].imshow(fil_spectrum, cmap='gray')
+    # plots[1, 0].set_title('High pass filtered DFT spectrum')
+    # plots[1, 1].imshow(fil_image, cmap='gray')
+    # plots[1, 1].set_title('Filtered Image')
+    # plt.show()
 
 
 def square_average_filter(image_path, size):
@@ -114,19 +114,23 @@ def square_average_filter(image_path, size):
 
 
 def high_boost_filter(image):
-    original_image = io.imread('./characters.tif')
-    blurred_image = flt.gaussian(image, 5) * 255
+    reference_image = io.imread('./characters.tif')
+    blurred_image = flt.gaussian(image, 5)
     mask = image - blurred_image
-    # plt.imshow(mask, cmap='gray')
-    # plt.figure()
+    # plt.imshow(255 - mask, cmap='gray')
+    # plt.show()
     k_values = np.arange(-4, 4, 0.1)
     errors = np.zeros_like(k_values)
     for i in range(len(k_values)):
         k = k_values[i]
         sharpened_image = image + k * mask
-        error = np.square(sharpened_image - original_image).mean()
+        # sharpened_image = full_scale_contrast_stretch(sharpened_image)
+        error = np.square(sharpened_image - reference_image).mean()
         errors[i] = error
     k_optimum = k_values[np.argmin(errors)]
+    print(k_optimum)
+    plt.plot(k_values, errors)
+    plt.show()
     sharpened_image = image + k_optimum * mask
     return sharpened_image
 
