@@ -42,15 +42,17 @@ def main():
     # plt.show()
 
     # # Question 2(a)
-    # sinusoidal_image = generate_sinusoidal_image(1001, 1001)
-    # _, dft_spectrum = dft(sinusoidal_image)
-    # fig, plots = plt.subplots(1, 2)
-    # fig.suptitle('Question 2 (a):DFT')
-    # plots[0].imshow(sinusoidal_image, cmap='gray', vmax=255, vmin=0)
-    # plots[0].set_title('Sinusoidal image')
-    # plots[1].imshow(dft_spectrum, cmap='gray', vmax=255, vmin=0)
-    # plots[1].set_title('DFT spectrum')
-    # plt.show()
+    sinusoidal_image = generate_sinusoidal_image(1001, 1001)
+    _, dft_spectrum = dft(sinusoidal_image)
+    sinusoidal_image = (sinusoidal_image + 255) / 2
+    # dft_spectrum = full_scale_contrast_stretch(dft_spectrum)
+    fig, plots = plt.subplots(1, 2)
+    fig.suptitle('Question 2 (a):DFT')
+    plots[0].imshow(sinusoidal_image, cmap='gray', vmax=255, vmin=0)
+    plots[0].set_title('Sinusoidal image')
+    plots[1].imshow(dft_spectrum, cmap='gray', vmax=255, vmin=0)
+    plots[1].set_title('DFT spectrum')
+    plt.show()
 
     # char_image = io.imread('./characters.tif')
     # # Question 2(b)
@@ -110,9 +112,9 @@ def main():
     # plt.show()
 
     # Question 4
-    k_1, k_2 = question_4()
-    print(f"Optimum value (a) = {k_1}")
-    print(f"Optimum value (b) = {k_2}")
+    # k_1, k_2 = question_4()
+    # print(f"Optimum value (a) = {k_1}")
+    # print(f"Optimum value (b) = {k_2}")
 
 
 def square_average_filter(image_path, size):
@@ -192,7 +194,6 @@ def generate_sinusoidal_image(M, N):
     for m in range(rows):
         for n in range(columns):
             sin_image[m, n] = math.sin(2 * math.pi * (u * m / M + v * n / N))
-    sin_image = (sin_image + 1) / 2
     return sin_image * 255
 
 
@@ -288,7 +289,6 @@ def question_4():
 
 
 def get_min_k(laplacian):
-
     H_temp = np.zeros_like(laplacian)
     for u in range(-2, 3):
         for v in range(-2, 3):
