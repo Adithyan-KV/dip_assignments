@@ -4,7 +4,6 @@ import math
 import scipy.fft as fft
 import scipy.ndimage as ndi
 import skimage.io as io
-from skimage.util.shape import view_as_windows
 from scipy.io import loadmat
 import time
 
@@ -92,15 +91,14 @@ def gaussian_denoise(image_data, kernel_size, std):
 
 def median_filter_denoise(image_data, kernel_size):
     padding = int(kernel_size / 2)
-    padded_image_data = np.pad(image_data, padding, 'reflect')
-    windows = view_as_windows(padded_image_data, kernel_size)
+    padded_image = np.pad(image_data, padding, 'reflect')
     filtered_image = np.zeros_like(image_data)
-    print(windows.shape)
-    size_x = image_data.shape[0] - 2 * int(kernel_size / 2)
-    size_y = image_data.shape[1] - 2 * int(kernel_size / 2)
-    for i in range(size_x):
-        for j in range(size_y):
-            filtered_image[i, j] = np.median(windows[i, j])
+    rows, columns = padded_image.shape
+    for i in range(padding, rows - padding - 1):
+        for j in range(padding, columns - padding - 1):
+            window = padded_image[i - padding:i +
+                                  padding, j - padding:j + padding]
+            filtered_image[i - padding, j - padding] = np.median(window)
     return filtered_image
 
 
