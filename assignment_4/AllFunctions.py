@@ -1,8 +1,10 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import math
 import scipy.fft as fft
 import skimage.io as io
 from scipy.io import loadmat
+import time
 
 
 def main():
@@ -11,7 +13,13 @@ def main():
     low_noise = io.imread('Blurred-LowNoise.png')
     med_noise = io.imread('Blurred-MedNoise.png')
     high_noise = io.imread('Blurred-HighNoise.png')
-    filtered = inverse_filter(med_noise, kernel)
+    noisy = io.imread('noisy-book1.png')
+
+    # # Question 1
+    # filtered = inverse_filter(low_noise, kernel)
+
+    # Question 2
+    denoised = gaussian_denoise(noisy, 5, 1)
 
 
 def inverse_filter(image_data, kernel):
@@ -62,6 +70,26 @@ def inverse_dft(dft_data):
     idft = fft.ifft2(dft_decentralized)
     filtered_image = np.abs(idft)
     return filtered_image
+
+
+def gaussian_denoise(image_data, kernel_size, std):
+    kernel = generate_gaussian_kernel(kernel_size, std)
+
+
+def generate_gaussian_kernel(size, std):
+    # shifting coordinates to center of kernel
+    mid = int(size / 2)
+
+    # generating kernel
+    x_range = np.arange(-mid, mid + 1, 1)
+    y_range = np.arange(-mid, mid + 1, 1)
+    x, y = np.meshgrid(x_range, y_range)
+    kernel = np.exp((np.square(x) + np.square(y)) / (2 * std**2))
+
+    # normalizing kernel
+    normalized_kernel = kernel / kernel.sum()
+
+    return normalized_kernel
 
 
 if __name__ == "__main__":
