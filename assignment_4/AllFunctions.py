@@ -94,8 +94,8 @@ def median_filter_denoise(image_data, kernel_size):
     padded_image = np.pad(image_data, padding, 'reflect')
     filtered_image = np.zeros_like(image_data)
     rows, columns = padded_image.shape
-    for i in range(padding, rows - padding - 1):
-        for j in range(padding, columns - padding - 1):
+    for i in range(padding, rows - padding):
+        for j in range(padding, columns - padding):
             window = padded_image[i - padding:i +
                                   padding, j - padding:j + padding]
             filtered_image[i - padding, j - padding] = np.median(window)
