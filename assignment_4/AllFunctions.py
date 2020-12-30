@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import math
 import scipy.fft as fft
+import scipy.ndimage as ndi
 import skimage.io as io
 from scipy.io import loadmat
 import time
@@ -19,7 +20,11 @@ def main():
     # filtered = inverse_filter(low_noise, kernel)
 
     # Question 2
-    denoised = gaussian_denoise(noisy, 5, 1)
+    denoised = gaussian_denoise(noisy, 7, 3)
+    plt.imshow(noisy, cmap='gray')
+    plt.figure()
+    plt.imshow(denoised, cmap='gray')
+    plt.show()
 
 
 def inverse_filter(image_data, kernel):
@@ -74,6 +79,8 @@ def inverse_dft(dft_data):
 
 def gaussian_denoise(image_data, kernel_size, std):
     kernel = generate_gaussian_kernel(kernel_size, std)
+    denoised_image = ndi.convolve(image_data, kernel)
+    return denoised_image
 
 
 def generate_gaussian_kernel(size, std):
