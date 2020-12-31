@@ -15,6 +15,7 @@ def main():
     med_noise = io.imread('Blurred-MedNoise.png')
     high_noise = io.imread('Blurred-HighNoise.png')
     noisy = io.imread('noisy-book1.png')
+    noisy_2 = io.imread('noisy-book2.png')
 
     # # Question 1
     # filtered = inverse_filter(low_noise, kernel)
@@ -100,6 +101,10 @@ def median_filter_denoise(image_data, kernel_size):
                                   padding, j - padding:j + padding]
             filtered_image[i - padding, j - padding] = np.median(window)
     return filtered_image
+
+
+def bilateral_filter(image_data):
+    pass
 
 
 def generate_gaussian_kernel(size, std):
