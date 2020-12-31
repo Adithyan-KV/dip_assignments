@@ -33,7 +33,7 @@ def main():
     # plt.imshow(denoised_median, cmap='gray')
     # plt.show()
 
-    denoised_bilateral = bilateral_filter(noisy_2, 5, 3, 3)
+    denoised_bilateral = bilateral_filter(noisy_2, 3, 2, 2)
     plt.imshow(noisy_2, cmap='gray')
     plt.figure()
     plt.imshow(denoised_bilateral, cmap='gray')
@@ -118,13 +118,14 @@ def bilateral_filter(image_data, kernel_size, std_dist, std_lum):
     for i in range(padding, rows - padding):
         for j in range(padding, columns - padding):
             window = padded_image[i - padding:i +
-                                  padding, j - padding:j + padding]
+                                  padding + 1, j - padding:j + padding + 1]
             value = padded_image[i, j]
             lum_kernel = np.square(window - value)
             sum_kernel = lum_kernel.sum()
             if sum_kernel > 0:
                 lum_kernel = lum_kernel / lum_kernel.sum()
-            filtered_image[i, j] = value * lum_kernel * distance_kernel
+            filtered_image[i - padding, j - padding] = (
+                lum_kernel * distance_kernel * window).sum()
     return filtered_image
 
 
