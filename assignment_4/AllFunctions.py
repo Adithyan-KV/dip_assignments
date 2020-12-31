@@ -27,10 +27,16 @@ def main():
     # plt.imshow(denoised, cmap='gray')
     # plt.show()
 
-    denoised_median = median_filter_denoise(noisy, 5)
-    plt.imshow(noisy, cmap='gray')
+    # denoised_median = median_filter_denoise(noisy, 5)
+    # plt.imshow(noisy, cmap='gray')
+    # plt.figure()
+    # plt.imshow(denoised_median, cmap='gray')
+    # plt.show()
+
+    denoised_bilateral = bilateral_filter(noisy_2, 5, 3, 3)
+    plt.imshow(noisy_2, cmap='gray')
     plt.figure()
-    plt.imshow(denoised_median, cmap='gray')
+    plt.imshow(denoised_bilateral, cmap='gray')
     plt.show()
 
 
@@ -98,13 +104,28 @@ def median_filter_denoise(image_data, kernel_size):
     for i in range(padding, rows - padding):
         for j in range(padding, columns - padding):
             window = padded_image[i - padding:i +
-                                  padding, j - padding:j + padding]
+                                  padding + 1, j - padding:j + padding + 1]
             filtered_image[i - padding, j - padding] = np.median(window)
     return filtered_image
 
 
-def bilateral_filter(image_data):
-    pass
+def bilateral_filter(image_data, kernel_size, std_dist, std_lum):
+    distance_kernel = generate_gaussian_kernel(kernel_size, std_dist)
+    padding = int(kernel_size / 2)
+    padded_image = np.pad(image_data, padding, 'reflect')
+    filtered_image = np.zeros_like(image_data)
+    rows, columns = padded_image.shape
+    for i in range(padding, rows - padding):
+        for j in range(padding, columns - padding):
+            window = padded_image[i - padding:i +
+                                  padding, j - padding:j + padding]
+            value = padded_image[i, j]
+            lum_kernel = np.square(window - value)
+            sum_kernel = lum_kernel.sum()
+            if sum_kernel > 0:
+                lum_kernel = lum_kernel / lum_kernel.sum()
+            filtered_image[i, j] = value * lum_kernel * distance_kernel
+    return filtered_image
 
 
 def generate_gaussian_kernel(size, std):
