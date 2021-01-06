@@ -16,6 +16,7 @@ def main():
     high_noise = io.imread('Blurred-HighNoise.png')
     noisy = io.imread('noisy-book1.png')
     noisy_2 = io.imread('noisy-book2.png')
+    barbara = io.imread('barbara.tif')
 
     # # Question 1
     # filtered = inverse_filter(low_noise, kernel)
@@ -33,10 +34,14 @@ def main():
     # plt.imshow(denoised_median, cmap='gray')
     # plt.show()
 
-    denoised_bilateral = bilateral_filter(noisy_2, 3, 2, 2)
-    plt.imshow(noisy_2, cmap='gray')
-    plt.figure()
-    plt.imshow(denoised_bilateral, cmap='gray')
+    # denoised_bilateral = bilateral_filter(noisy_2, 3, 2, 2)
+    # plt.imshow(noisy_2, cmap='gray')
+    # plt.figure()
+    # plt.imshow(denoised_bilateral, cmap='gray')
+    # plt.show()
+
+    downsampled_barb = downsample(barbara, 2)
+    plt.imshow(downsampled_barb, cmap='gray')
     plt.show()
 
 
@@ -143,6 +148,11 @@ def generate_gaussian_kernel(size, std):
     normalized_kernel = kernel / kernel.sum()
 
     return normalized_kernel
+
+
+def downsample(image_data, factor):
+    downsampled_image = image_data[0::factor, 0::factor]
+    return downsampled_image
 
 
 if __name__ == "__main__":
