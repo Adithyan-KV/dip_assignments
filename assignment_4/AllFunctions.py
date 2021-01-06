@@ -42,6 +42,9 @@ def main():
 
     downsampled_barb = downsample(barbara, 2)
     plt.imshow(downsampled_barb, cmap='gray')
+    plt.figure()
+    decimated_barb = decimate(barbara, 2)
+    plt.imshow(decimated_barb, cmap='gray')
     plt.show()
 
 
@@ -153,6 +156,27 @@ def generate_gaussian_kernel(size, std):
 def downsample(image_data, factor):
     downsampled_image = image_data[0::factor, 0::factor]
     return downsampled_image
+
+
+def decimate(image_data, factor):
+    dft_data, _ = dft(image_data)
+    dft_filtered, _ = filter_gaussian_low_pass(dft_data)
+    filtered_image = inverse_dft(dft_filtered)
+    decimated = downsample(filtered_image, factor)
+    return decimated
+
+
+def filter_gaussian_low_pass(dft_centered, D_0=100):
+    H = np.zeros_like(dft_centered, dtype=np.float64)
+    P, Q = dft_centered.shape
+    # calculate the gaussian low pass filter
+    for u in range(P):
+        for v in range(Q):
+            D = math.sqrt((u - P / 2)**2 + (v - Q / 2)**2)
+            H[u, v] = math.exp((-D**2) / (2 * (D_0**2)))
+    filtered_dft = H * dft_centered
+    filtered_spectrum = np.log(1 + np.abs(filtered_dft)) * 255
+    return filtered_dft, filtered_spectrum
 
 
 if __name__ == "__main__":
