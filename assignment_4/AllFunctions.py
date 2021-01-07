@@ -4,6 +4,7 @@ import math
 import scipy.fft as fft
 import scipy.ndimage as ndi
 import skimage.io as io
+import skimage.color as col
 from scipy.io import loadmat
 import time
 
@@ -14,9 +15,13 @@ def main():
     low_noise = io.imread('Blurred-LowNoise.png')
     med_noise = io.imread('Blurred-MedNoise.png')
     high_noise = io.imread('Blurred-HighNoise.png')
+    original_book = io.imread('Original-book.png')
     noisy = io.imread('noisy-book1.png')
     noisy_2 = io.imread('noisy-book2.png')
     barbara = io.imread('barbara.tif')
+    donut = io.imread('donut.jpg')
+    phone = io.imread('phone.jpg')
+    dude = io.imread('dude.jpg')
 
     # # Question 1
     # filtered = inverse_filter(low_noise, kernel)
@@ -40,12 +45,14 @@ def main():
     # plt.imshow(denoised_bilateral, cmap='gray')
     # plt.show()
 
-    downsampled_barb = downsample(barbara, 2)
-    plt.imshow(downsampled_barb, cmap='gray')
-    plt.figure()
-    decimated_barb = decimate(barbara, 2)
-    plt.imshow(decimated_barb, cmap='gray')
-    plt.show()
+    # downsampled_barb = downsample(barbara, 2)
+    # plt.imshow(downsampled_barb, cmap='gray')
+    # plt.figure()
+    # decimated_barb = decimate(barbara, 2)
+    # plt.imshow(decimated_barb, cmap='gray')
+    # plt.show()
+
+    edge_book = detect_edges(dude, 0.15)
 
 
 def inverse_filter(image_data, kernel):
@@ -177,6 +184,23 @@ def filter_gaussian_low_pass(dft_centered, D_0=100):
     filtered_dft = H * dft_centered
     filtered_spectrum = np.log(1 + np.abs(filtered_dft)) * 255
     return filtered_dft, filtered_spectrum
+
+
+def detect_edges(image_data, threshold):
+    grayscale_image = col.rgb2gray(image_data)
+    blurred_image = gaussian_denoise(grayscale_image, 5, 3)
+    sobel_kernel_x = np.array([[-1, 0, 1],
+                               [-2, 0, 2],
+                               [-1, 0, 1]])
+    sobel_kernel_y = np.transpose(sobel_kernel_x)
+    x_magnitudes = ndi.convolve(blurred_image, sobel_kernel_x)
+    y_magnitudes = ndi.convolve(blurred_image, sobel_kernel_y)
+    magnitude_map = np.sqrt(np.square(x_magnitudes) + np.square(y_magnitudes))
+    print(magnitude_map.max(), magnitude_map.min())
+    edge_image = (magnitude_map > threshold)
+    print(edge_image.shape)
+    plt.imshow(edge_image, cmap='gray')
+    plt.show()
 
 
 if __name__ == "__main__":
