@@ -186,9 +186,9 @@ def filter_gaussian_low_pass(dft_centered, D_0=100):
     return filtered_dft, filtered_spectrum
 
 
-def detect_edges(image_data, threshold):
+def detect_edges(image_data, size_kernel, std_kernel, threshold):
     grayscale_image = col.rgb2gray(image_data)
-    blurred_image = gaussian_denoise(grayscale_image, 5, 3)
+    blurred_image = gaussian_denoise(grayscale_image, size_kernel, std_kernel)
     sobel_kernel_x = np.array([[-1, 0, 1],
                                [-2, 0, 2],
                                [-1, 0, 1]])
@@ -196,11 +196,8 @@ def detect_edges(image_data, threshold):
     x_magnitudes = ndi.convolve(blurred_image, sobel_kernel_x)
     y_magnitudes = ndi.convolve(blurred_image, sobel_kernel_y)
     magnitude_map = np.sqrt(np.square(x_magnitudes) + np.square(y_magnitudes))
-    print(magnitude_map.max(), magnitude_map.min())
     edge_image = (magnitude_map > threshold)
-    print(edge_image.shape)
-    plt.imshow(edge_image, cmap='gray')
-    plt.show()
+    return edge_image
 
 
 if __name__ == "__main__":

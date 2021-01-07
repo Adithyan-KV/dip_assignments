@@ -5,9 +5,10 @@ import skimage.transform as tfm
 
 
 def main():
-    question_1()
-    question_2()
-    question_3()
+    # question_1()
+    # question_2()
+    # question_3()
+    question_4()
 
 
 def question_1():
@@ -45,6 +46,39 @@ def question_3():
     plots[1, 0].set_title('Decimated by 2x')
     plots[1, 1].imshow(scaled_using_library, cmap='gray')
     plots[1, 1].set_title('Using skimage library function')
+    plt.show()
+
+
+def question_4():
+    # All free stock images taken from Unsplash.com
+    donut = io.imread('donut.jpg')
+    phone = io.imread('phone.jpg')
+    dude = io.imread('dude.jpg')
+    street = io.imread('street.jpg')
+    donut_edges = af.detect_edges(donut, 5, 3, 0.5)
+    phone_edges = af.detect_edges(phone, 5, 3, 0.2)
+    dude_edges = af.detect_edges(dude, 5, 3, 0.15)
+    street_edges = af.detect_edges(street, 5, 3, 0.4)
+    fig, plots = plt.subplots(2, 2)
+    fig.suptitle('Edge detection')
+    plots[0, 0].imshow(donut)
+    plots[0, 0].set_title('Original Image')
+    plots[0, 1].imshow(donut_edges, cmap='gray')
+    plots[0, 1].set_title('Detected Edges')
+    plots[1, 0].imshow(phone)
+    plots[1, 0].set_title('Original Image')
+    plots[1, 1].imshow(phone_edges, cmap='gray')
+    plots[1, 1].set_title('Detected Edges')
+    fig_2, plots_2 = plt.subplots(2, 2)
+    fig_2.suptitle('Edge detection')
+    plots_2[0, 0].imshow(dude)
+    plots_2[0, 0].set_title('Original Image')
+    plots_2[0, 1].imshow(dude_edges, cmap='gray')
+    plots_2[0, 1].set_title('Detected Edges')
+    plots_2[1, 0].imshow(street)
+    plots_2[1, 0].set_title('Original Image')
+    plots_2[1, 1].imshow(street_edges, cmap='gray')
+    plots_2[1, 1].set_title('Detected Edges')
     plt.show()
 
 
