@@ -6,3 +6,6 @@ img
 
 #ignore vscode venc
 .vscode
+
+#ignore huge ass folder
+hw5

@@ -10,49 +10,24 @@ import time
 
 
 def main():
-    kernel_obj = loadmat('BlurKernel.mat')
-    kernel = kernel_obj['h']
-    low_noise = io.imread('Blurred-LowNoise.png')
-    med_noise = io.imread('Blurred-MedNoise.png')
-    high_noise = io.imread('Blurred-HighNoise.png')
-    original_book = io.imread('Original-book.png')
-    noisy = io.imread('noisy-book1.png')
-    noisy_2 = io.imread('noisy-book2.png')
-    barbara = io.imread('barbara.tif')
-    donut = io.imread('donut.jpg')
-    phone = io.imread('phone.jpg')
-    dude = io.imread('dude.jpg')
+    # kernel_obj = loadmat('BlurKernel.mat')
+    # kernel = kernel_obj['h']
+    # low_noise = io.imread('Blurred-LowNoise.png')
+    # med_noise = io.imread('Blurred-MedNoise.png')
+    # high_noise = io.imread('Blurred-HighNoise.png')
+    # original_book = io.imread('Original-book.png')
+    # noisy = io.imread('noisy-book1.png')
+    # noisy_2 = io.imread('noisy-book2.png')
+    # barbara = io.imread('barbara.tif')
+    # donut = io.imread('donut.jpg')
+    # phone = io.imread('phone.jpg')
+    # dude = io.imread('dude.jpg')
 
-    # # Question 1
-    # filtered = inverse_filter(low_noise, kernel)
-
-    # # Question 2
-    # denoised = gaussian_denoise(noisy, 7, 3)
-    # plt.imshow(noisy, cmap='gray')
-    # plt.figure()
-    # plt.imshow(denoised, cmap='gray')
-    # plt.show()
-
-    # denoised_median = median_filter_denoise(noisy, 5)
-    # plt.imshow(noisy, cmap='gray')
-    # plt.figure()
-    # plt.imshow(denoised_median, cmap='gray')
-    # plt.show()
-
-    # denoised_bilateral = bilateral_filter(noisy_2, 3, 2, 2)
-    # plt.imshow(noisy_2, cmap='gray')
-    # plt.figure()
-    # plt.imshow(denoised_bilateral, cmap='gray')
-    # plt.show()
-
-    # downsampled_barb = downsample(barbara, 2)
-    # plt.imshow(downsampled_barb, cmap='gray')
-    # plt.figure()
-    # decimated_barb = decimate(barbara, 2)
-    # plt.imshow(decimated_barb, cmap='gray')
-    # plt.show()
-
-    edge_book = detect_edges(dude, 0.15)
+    ref_obj = loadmat('hw5.mat')
+    ref_image_names = ref_obj['refnames_blur']
+    human_opinion_scores = ref_obj['blur_dmos']
+    blur_orgs = ref_obj['blur_orgs']
+    mse_list = get_mses(ref_image_names)
 
 
 def inverse_filter(image_data, kernel):
@@ -187,8 +162,13 @@ def filter_gaussian_low_pass(dft_centered, D_0=100):
 
 
 def detect_edges(image_data, size_kernel, std_kernel, threshold):
+    # converting color images to grayscale
     grayscale_image = col.rgb2gray(image_data)
+
+    # blurring the image
     blurred_image = gaussian_denoise(grayscale_image, size_kernel, std_kernel)
+
+    # filtering using sobel kernel
     sobel_kernel_x = np.array([[-1, 0, 1],
                                [-2, 0, 2],
                                [-1, 0, 1]])
@@ -196,8 +176,29 @@ def detect_edges(image_data, size_kernel, std_kernel, threshold):
     x_magnitudes = ndi.convolve(blurred_image, sobel_kernel_x)
     y_magnitudes = ndi.convolve(blurred_image, sobel_kernel_y)
     magnitude_map = np.sqrt(np.square(x_magnitudes) + np.square(y_magnitudes))
+
+    # thresholding edges
     edge_image = (magnitude_map > threshold)
     return edge_image
+
+
+def get_mses(ref_image_names):
+    num_images = len(ref_image_names[0])
+    mse_list = np.zeros(num_images)
+    for i in range(num_images):
+        # loading in images from relative paths
+        distorted_image = io.imread(f'hw5/gblur/img{i+1}.bmp')
+        reference_image = io.imread(f'hw5/refimgs/{ref_image_names[0, i][0]}')
+
+        # converting to grayscale
+        dist_img_gray = col.rgb2gray(distorted_image)
+        ref_img_gray = col.rgb2gray(reference_image)
+
+        # computing MSE
+        m, n = dist_img_gray.shape
+        mse = (1 / (m * n)) * np.sum((dist_img_gray - ref_img_gray)**2)
+        mse_list[i] = mse
+    return mse_list
 
 
 if __name__ == "__main__":
