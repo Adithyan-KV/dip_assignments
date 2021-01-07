@@ -25,20 +25,7 @@ def main():
     # donut = io.imread('donut.jpg')
     # phone = io.imread('phone.jpg')
     # dude = io.imread('dude.jpg')
-
-    ref_obj = loadmat('hw5.mat')
-    ref_image_names = ref_obj['refnames_blur']
-    human_opinion_scores = ref_obj['blur_dmos'][0]
-    blur_orgs = ref_obj['blur_orgs']
-    ignore_elem_number = blur_orgs.sum()
-    mse_list = get_mses(ref_image_names)
-    ssim_list = get_ssims(ref_image_names)
-    mse_list = mse_list[:-ignore_elem_number]
-    ssim_list = ssim_list[:-ignore_elem_number]
-    human_opinion_scores = ssim_list[:-ignore_elem_number]
-    srocc_mse = spearmanr(mse_list, human_opinion_scores)
-    srocc_ssim = spearmanr(ssim_list, human_opinion_scores)
-    print(srocc_mse, srocc_ssim)
+    pass
 
 
 def inverse_filter(image_data, kernel):
@@ -191,6 +178,22 @@ def detect_edges(image_data, size_kernel, std_kernel, threshold):
     # thresholding edges
     edge_image = (magnitude_map > threshold)
     return edge_image
+
+
+def get_sroccs():
+    ref_obj = loadmat('hw5.mat')
+    ref_image_names = ref_obj['refnames_blur']
+    human_opinion_scores = ref_obj['blur_dmos'][0]
+    blur_orgs = ref_obj['blur_orgs']
+    ignore_elem_number = blur_orgs.sum()
+    mse_list = get_mses(ref_image_names)
+    ssim_list = get_ssims(ref_image_names)
+    mse_list = mse_list[:-ignore_elem_number]
+    ssim_list = ssim_list[:-ignore_elem_number]
+    human_opinion_scores = ssim_list[:-ignore_elem_number]
+    srocc_mse = spearmanr(mse_list, human_opinion_scores)
+    srocc_ssim = spearmanr(ssim_list, human_opinion_scores)
+    return srocc_mse, srocc_ssim
 
 
 def get_mses(ref_image_names):
