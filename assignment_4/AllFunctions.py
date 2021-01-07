@@ -3,8 +3,11 @@ import matplotlib.pyplot as plt
 import math
 import scipy.fft as fft
 import scipy.ndimage as ndi
+from scipy.stats import spearmanr
 import skimage.io as io
 import skimage.color as col
+from skimage.metrics import structural_similarity
+from skimage.metrics import mean_squared_error
 from scipy.io import loadmat
 import time
 
@@ -25,9 +28,17 @@ def main():
 
     ref_obj = loadmat('hw5.mat')
     ref_image_names = ref_obj['refnames_blur']
-    human_opinion_scores = ref_obj['blur_dmos']
+    human_opinion_scores = ref_obj['blur_dmos'][0]
     blur_orgs = ref_obj['blur_orgs']
+    ignore_elem_number = blur_orgs.sum()
     mse_list = get_mses(ref_image_names)
+    ssim_list = get_ssims(ref_image_names)
+    mse_list = mse_list[:-ignore_elem_number]
+    ssim_list = ssim_list[:-ignore_elem_number]
+    human_opinion_scores = ssim_list[:-ignore_elem_number]
+    srocc_mse = spearmanr(mse_list, human_opinion_scores)
+    srocc_ssim = spearmanr(ssim_list, human_opinion_scores)
+    print(srocc_mse, srocc_ssim)
 
 
 def inverse_filter(image_data, kernel):
@@ -195,10 +206,27 @@ def get_mses(ref_image_names):
         ref_img_gray = col.rgb2gray(reference_image)
 
         # computing MSE
-        m, n = dist_img_gray.shape
-        mse = (1 / (m * n)) * np.sum((dist_img_gray - ref_img_gray)**2)
+        mse = mean_squared_error(dist_img_gray, ref_img_gray)
         mse_list[i] = mse
     return mse_list
+
+
+def get_ssims(ref_image_names):
+    num_images = len(ref_image_names[0])
+    ssim_list = np.zeros(num_images)
+    for i in range(num_images):
+        # loading in images from relative paths
+        distorted_image = io.imread(f'hw5/gblur/img{i+1}.bmp')
+        reference_image = io.imread(f'hw5/refimgs/{ref_image_names[0, i][0]}')
+
+        # converting to grayscale
+        dist_img_gray = col.rgb2gray(distorted_image)
+        ref_img_gray = col.rgb2gray(reference_image)
+
+        # computing ssims
+        ssim = structural_similarity(ref_img_gray, dist_img_gray)
+        ssim_list[i] = ssim
+    return ssim_list
 
 
 if __name__ == "__main__":
