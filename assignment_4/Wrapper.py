@@ -8,7 +8,8 @@ def main():
     # question_1()
     # question_2()
     # question_3()
-    question_4()
+    # question_4()
+    question_5()
 
 
 def question_1():
@@ -83,7 +84,9 @@ def question_4():
 
 
 def question_5():
-    pass
+    srocc_mse, srocc_ssim = af.get_sroccs()
+    print(f"for MSE metric: {srocc_mse}")
+    print(f"for SSIM metric:{srocc_ssim}")
 
 
 if __name__ == "__main__":
