@@ -6,8 +6,8 @@ import scipy.ndimage as ndi
 from scipy.stats import spearmanr
 import skimage.io as io
 import skimage.color as col
-from skimage.metrics import structural_similarity
-from skimage.metrics import mean_squared_error
+from skimage.metrics import structural_similarity, mean_squared_error
+from skimage.restoration import denoise_bilateral
 from scipy.io import loadmat
 import time
 
@@ -34,19 +34,11 @@ def inverse_filter(image_data, kernel):
     padded_kernel = pad_to_be_like(kernel, image_data)
 
     kernel_dft, kernel_spectrum = dft(padded_kernel)
-    plt.imshow(image_spectrum, cmap='gray')
 
     original_image_dft = image_dft * 1 / kernel_dft
     original_image_spectrum = np.log(1 + np.abs(original_image_dft))
     original_image = inverse_dft(original_image_dft)
-    plt.figure()
-    plt.imshow(original_image_spectrum, cmap='gray')
-
-    plt.figure()
-    plt.imshow(kernel_spectrum, cmap='gray')
-    plt.figure()
-    plt.imshow(original_image, cmap='gray')
-    plt.show()
+    return image_spectrum, kernel_spectrum, original_image_spectrum, original_image
 
 
 def pad_to_be_like(kernel, image):
@@ -98,7 +90,9 @@ def median_filter_denoise(image_data, kernel_size):
 
 
 def bilateral_filter(image_data, kernel_size, std_dist, std_lum):
+    image_data = image_data / 255
     distance_kernel = generate_gaussian_kernel(kernel_size, std_dist)
+    # padding for convolution
     padding = int(kernel_size / 2)
     padded_image = np.pad(image_data, padding, 'reflect')
     filtered_image = np.zeros_like(image_data)
@@ -107,30 +101,26 @@ def bilateral_filter(image_data, kernel_size, std_dist, std_lum):
         for j in range(padding, columns - padding):
             window = padded_image[i - padding:i +
                                   padding + 1, j - padding:j + padding + 1]
+            # computing the luminance kernel
             value = padded_image[i, j]
-            lum_kernel = np.square(window - value)
-            sum_kernel = lum_kernel.sum()
-            if sum_kernel > 0:
-                lum_kernel = lum_kernel / lum_kernel.sum()
-            filtered_image[i - padding, j - padding] = (
-                lum_kernel * distance_kernel * window).sum()
+            x = (window - value)**2
+            lum_kernel = np.exp(-x / (2 * std_lum**2))
+
+            # applying the final kernel
+            final_kernel = lum_kernel * distance_kernel
+            filtered_image[i - padding, j -
+                           padding] = (final_kernel * window).sum()
     return filtered_image
 
 
 def generate_gaussian_kernel(size, std):
-    # shifting coordinates to center of kernel
-    mid = int(size / 2)
-
-    # generating kernel
-    x_range = np.arange(-mid, mid + 1, 1)
-    y_range = np.arange(-mid, mid + 1, 1)
-    x, y = np.meshgrid(x_range, y_range)
-    kernel = np.exp((np.square(x) + np.square(y)) / (2 * std**2))
-
+    ax = np.linspace(-(size - 1) / 2., (size - 1) / 2., size)
+    x_grid, y_grid = np.meshgrid(ax, ax)
+    kernel = np.exp(-0.5 * (np.square(x_grid) + np.square(y_grid)) / std**2)
     # normalizing kernel
-    normalized_kernel = kernel / kernel.sum()
+    kernel = kernel / kernel.sum()
 
-    return normalized_kernel
+    return kernel
 
 
 def downsample(image_data, factor):
