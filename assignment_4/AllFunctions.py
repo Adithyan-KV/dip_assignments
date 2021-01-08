@@ -41,6 +41,27 @@ def inverse_filter(image_data, kernel):
     return image_spectrum, kernel_spectrum, original_image_spectrum, original_image
 
 
+def wiener_filter(image_data, kernel, std):
+    image_dft, _ = dft(image_data)
+    # power spectral density
+    sf = np.square(np.abs(image_dft))
+    sw = std**2
+
+    padded_kernel = pad_to_be_like(kernel, image_data)
+    kernel_dft, _ = dft(padded_kernel)
+
+    D_numerator = sf * np.conj(kernel_dft)
+    D_denominator = np.square(np.abs(kernel_dft)) * sf + sw
+    D = D_numerator / D_denominator
+
+    d = inverse_dft(D)
+
+    restored_image = ndi.convolve(image_data, d)
+
+    plt.imshow(restored_image, cmap='gray')
+    plt.show()
+
+
 def pad_to_be_like(kernel, image):
     rows_k, cols_k = kernel.shape
     rows_i, cols_i = image.shape
@@ -108,6 +129,8 @@ def bilateral_filter(image_data, kernel_size, std_dist, std_lum):
 
             # applying the final kernel
             final_kernel = lum_kernel * distance_kernel
+            if final_kernel.sum() > 0:
+                final_kernel = final_kernel / final_kernel.sum()
             filtered_image[i - padding, j -
                            padding] = (final_kernel * window).sum()
     return filtered_image
