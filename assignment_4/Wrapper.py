@@ -7,8 +7,8 @@ import skimage.transform as tfm
 
 
 def main():
-    # question_1()
-    question_2()
+    question_1()
+    # question_2()
     # question_3()
     # question_4()
     # question_5()
@@ -17,6 +17,8 @@ def main():
 def question_1():
     kernel_obj = loadmat('BlurKernel.mat')
     kernel = kernel_obj['h']
+    plt.imshow(kernel)
+    plt.show()
     low_noise = io.imread('Blurred-LowNoise.png')
     med_noise = io.imread('Blurred-MedNoise.png')
     high_noise = io.imread('Blurred-HighNoise.png')
@@ -37,29 +39,29 @@ def question_1():
     plots[1, 0].set_title('Filtered Spectrum')
     plots[1, 1].imshow(image_1, cmap='gray')
     plots[1, 1].set_title('Filtered Image')
-    # med noise
-    fig_2, plots_2 = plt.subplots(2, 2)
-    fig_2.suptitle('Question 1(a):Inverse filtering')
-    plots_2[0, 0].imshow(img_spec_2, cmap='gray')
-    plots_2[0, 0].set_title('Noisy image spectrum (medium noise)')
-    plots_2[0, 1].imshow(kernel_spec_2, cmap='gray')
-    plots_2[0, 1].set_title('Kernel Spectrum')
-    plots_2[1, 0].imshow(final_spec_2, cmap='gray')
-    plots_2[1, 0].set_title('Filtered Spectrum')
-    plots_2[1, 1].imshow(image_2, cmap='gray')
-    plots_2[1, 1].set_title('Filtered Image')
-    # high noise
-    fig_3, plots_3 = plt.subplots(2, 2)
-    fig_3.suptitle('Question 1(a):Inverse filtering')
-    plots_3[0, 0].imshow(img_spec_3, cmap='gray')
-    plots_3[0, 0].set_title('Noisy image spectrum (High noise)')
-    plots_3[0, 1].imshow(kernel_spec_3, cmap='gray')
-    plots_3[0, 1].set_title('Kernel Spectrum')
-    plots_3[1, 0].imshow(final_spec_3, cmap='gray')
-    plots_3[1, 0].set_title('Filtered Spectrum')
-    plots_3[1, 1].imshow(image_3, cmap='gray')
-    plots_3[1, 1].set_title('Filtered Image')
-    plt.show()
+    # # med noise
+    # fig_2, plots_2 = plt.subplots(2, 2)
+    # fig_2.suptitle('Question 1(a):Inverse filtering')
+    # plots_2[0, 0].imshow(img_spec_2, cmap='gray')
+    # plots_2[0, 0].set_title('Noisy image spectrum (medium noise)')
+    # plots_2[0, 1].imshow(kernel_spec_2, cmap='gray')
+    # plots_2[0, 1].set_title('Kernel Spectrum')
+    # plots_2[1, 0].imshow(final_spec_2, cmap='gray')
+    # plots_2[1, 0].set_title('Filtered Spectrum')
+    # plots_2[1, 1].imshow(image_2, cmap='gray')
+    # plots_2[1, 1].set_title('Filtered Image')
+    # # high noise
+    # fig_3, plots_3 = plt.subplots(2, 2)
+    # fig_3.suptitle('Question 1(a):Inverse filtering')
+    # plots_3[0, 0].imshow(img_spec_3, cmap='gray')
+    # plots_3[0, 0].set_title('Noisy image spectrum (High noise)')
+    # plots_3[0, 1].imshow(kernel_spec_3, cmap='gray')
+    # plots_3[0, 1].set_title('Kernel Spectrum')
+    # plots_3[1, 0].imshow(final_spec_3, cmap='gray')
+    # plots_3[1, 0].set_title('Filtered Spectrum')
+    # plots_3[1, 1].imshow(image_3, cmap='gray')
+    # plots_3[1, 1].set_title('Filtered Image')
+    # plt.show()
 
 
 def question_2():
@@ -79,8 +81,8 @@ def question_2():
 
     # part b
     noisy_2 = io.imread('noisy-book2.png')
-    gauss_denoised = af.gaussian_denoise(noisy_2, 11, 5)
-    bilateral_filtered = af.bilateral_filter(noisy_2, 11, 5, 0.4)
+    gauss_denoised = af.gaussian_denoise(noisy_2, 9, 6)
+    bilateral_filtered = af.bilateral_filter(noisy_2, 9, 6, 0.5)
     fig, plots = plt.subplots(1, 3)
     fig.suptitle('Question 2 (a):Comparing median and gaussian filtering')
     plots[0].imshow(noisy_2, cmap='gray')
