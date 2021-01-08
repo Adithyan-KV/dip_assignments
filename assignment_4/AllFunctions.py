@@ -13,19 +13,28 @@ import time
 
 
 def main():
-    # kernel_obj = loadmat('BlurKernel.mat')
-    # kernel = kernel_obj['h']
+    kernel_obj = loadmat('BlurKernel.mat')
+    kernel = kernel_obj['h']
     # low_noise = io.imread('Blurred-LowNoise.png')
     # med_noise = io.imread('Blurred-MedNoise.png')
     # high_noise = io.imread('Blurred-HighNoise.png')
-    # original_book = io.imread('Original-book.png')
+    original_book = io.imread('Original-book.png')
     # noisy = io.imread('noisy-book1.png')
     # noisy_2 = io.imread('noisy-book2.png')
     # barbara = io.imread('barbara.tif')
     # donut = io.imread('donut.jpg')
     # phone = io.imread('phone.jpg')
     # dude = io.imread('dude.jpg')
-    pass
+    blurred = bleh(original_book, kernel)
+    wiener = wiener_filter(blurred, kernel, 0)
+
+
+def bleh(image, kernel):
+    final_image = ndi.convolve(image, kernel)
+    plt.imshow(final_image, cmap='gray')
+    plt.show()
+    print(final_image.shape)
+    return final_image
 
 
 def inverse_filter(image_data, kernel):
@@ -54,9 +63,9 @@ def wiener_filter(image_data, kernel, std):
     D_denominator = np.square(np.abs(kernel_dft)) * sf + sw
     D = D_numerator / D_denominator
 
-    d = inverse_dft(D)
+    restored_dft = D * image_dft
 
-    restored_image = ndi.convolve(image_data, d)
+    restored_image = inverse_dft(restored_dft)
 
     plt.imshow(restored_image, cmap='gray')
     plt.show()
@@ -197,13 +206,13 @@ def get_sroccs():
     ref_obj = loadmat('hw5.mat')
     ref_image_names = ref_obj['refnames_blur']
     human_opinion_scores = ref_obj['blur_dmos'][0]
-    blur_orgs = ref_obj['blur_orgs']
-    ignore_elem_number = blur_orgs.sum()
+    # computing the metrics
     mse_list = get_mses(ref_image_names)
     ssim_list = get_ssims(ref_image_names)
-    mse_list = mse_list[:-ignore_elem_number]
-    ssim_list = ssim_list[:-ignore_elem_number]
-    human_opinion_scores = ssim_list[:-ignore_elem_number]
+    # ignoring the images which are not distorted
+    mse_list = mse_list[:-29]
+    ssim_list = ssim_list[:-29]
+    human_opinion_scores = human_opinion_scores[:-29]
     srocc_mse = spearmanr(mse_list, human_opinion_scores)
     srocc_ssim = spearmanr(ssim_list, human_opinion_scores)
     return srocc_mse, srocc_ssim

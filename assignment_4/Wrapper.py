@@ -8,10 +8,10 @@ import skimage.transform as tfm
 
 def main():
     # question_1()
-    question_2()
+    # question_2()
     # question_3()
     # question_4()
-    # question_5()
+    question_5()
 
 
 def question_1():
@@ -20,23 +20,23 @@ def question_1():
     low_noise = io.imread('Blurred-LowNoise.png')
     med_noise = io.imread('Blurred-MedNoise.png')
     high_noise = io.imread('Blurred-HighNoise.png')
-    # img_spec_1, kernel_spec_1, final_spec_1, image_1 = af.inverse_filter(
-    #     low_noise, kernel)
+    img_spec_1, kernel_spec_1, final_spec_1, image_1 = af.inverse_filter(
+        low_noise, kernel)
     # img_spec_2, kernel_spec_2, final_spec_2, image_2 = af.inverse_filter(
     #     med_noise, kernel)
     # img_spec_3, kernel_spec_3, final_spec_3, image_3 = af.inverse_filter(
     #     high_noise, kernel)
-    # # low noise
-    # fig, plots = plt.subplots(2, 2)
-    # fig.suptitle('Question 1(a):Inverse filtering')
-    # plots[0, 0].imshow(img_spec_1, cmap='gray')
-    # plots[0, 0].set_title('Noisy image spectrum (low noise)')
-    # plots[0, 1].imshow(kernel_spec_1, cmap='gray')
-    # plots[0, 1].set_title('Kernel Spectrum')
-    # plots[1, 0].imshow(final_spec_1, cmap='gray')
-    # plots[1, 0].set_title('Filtered Spectrum')
-    # plots[1, 1].imshow(image_1, cmap='gray')
-    # plots[1, 1].set_title('Filtered Image')
+    # low noise
+    fig, plots = plt.subplots(2, 2)
+    fig.suptitle('Question 1(a):Inverse filtering')
+    plots[0, 0].imshow(img_spec_1, cmap='gray')
+    plots[0, 0].set_title('Noisy image spectrum (low noise)')
+    plots[0, 1].imshow(kernel_spec_1, cmap='gray')
+    plots[0, 1].set_title('Kernel Spectrum')
+    plots[1, 0].imshow(final_spec_1, cmap='gray')
+    plots[1, 0].set_title('Filtered Spectrum')
+    plots[1, 1].imshow(image_1, cmap='gray')
+    plots[1, 1].set_title('Filtered Image')
     # # med noise
     # fig_2, plots_2 = plt.subplots(2, 2)
     # fig_2.suptitle('Question 1(a):Inverse filtering')
@@ -59,10 +59,10 @@ def question_1():
     # plots_3[1, 0].set_title('Filtered Spectrum')
     # plots_3[1, 1].imshow(image_3, cmap='gray')
     # plots_3[1, 1].set_title('Filtered Image')
-    # plt.show()
+    plt.show()
 
     # part b
-    restored_wiener = af.wiener_filter(low_noise, kernel, 1)
+    # restored_wiener = af.wiener_filter(low_noise, kernel, 1)
 
 
 def question_2():
