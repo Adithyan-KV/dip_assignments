@@ -43,6 +43,7 @@ def main():
 
 
 def inverse_filter(image_data, kernel):
+    image_data = image_data.astype(np.float64) / 255
     image_dft, image_spectrum = dft(image_data)
 
     padded_kernel = pad_to_be_like(kernel, image_data)
@@ -55,44 +56,27 @@ def inverse_filter(image_data, kernel):
     return image_spectrum, kernel_spectrum, original_image_spectrum, original_image
 
 
-def wiener_filter(image_data, kernel, std):
-    image_dft = fft.fft2(image_data)
-    sf = (np.abs(image_dft)**2)
-    sw = std**2
+def wiener_filter(image_data, kernel, sigma):
+    image_data = image_data.astype(np.float64) / 255
 
-    kernel_dft = (fft.fft2(kernel, s=image_dft.shape))
-
-    D_numerator = np.conj(kernel_dft)
-    D_denominator = (np.square(np.abs(kernel_dft)) + sw)
-    D = D_numerator / D_denominator
-
-    restored_dft = D * image_dft
-
-    restored_image = fft.ifft2(restored_dft)
-    plt.imshow(np.abs(restored_image), cmap='gray')
-    plt.show()
-
-
-def wiener_filter_2(image_data, kernel, std):
+    # computing the dfts
     image_dft, _ = dft(image_data)
-    # power spectral density
-    sf = np.sum(np.square(np.abs(image_dft)))
-    sw = std**2
-
     padded_kernel = pad_to_be_like(kernel, image_data)
-
     kernel_dft, _ = dft(padded_kernel)
 
-    D_numerator = sf * np.conj(kernel_dft)
-    D_denominator = np.sum(np.square(np.abs(kernel_dft))) * sf + sw
-    D = D_numerator / D_denominator
+    Sw = sigma**2
+    Sf = ((np.abs(image_dft)))**2
 
-    restored_dft = D * image_dft
+    # computing the wiener filter
+    wiener_numerator = np.conjugate(kernel_dft)
+    wiener_denominator = ((np.abs(kernel_dft))**2) + (Sw / Sf)
+    wiener_filter = wiener_numerator / wiener_denominator
 
-    restored_image = inverse_dft(restored_dft)
+    # applying the filter
+    filtered_image_dft = image_dft * wiener_filter
+    filtered_image = inverse_dft(filtered_image_dft)
 
-    plt.imshow(restored_image, cmap='gray')
-    plt.show()
+    return filtered_image
 
 
 def clsf(image_data, kernel, lam):
