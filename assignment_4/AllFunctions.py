@@ -96,26 +96,27 @@ def wiener_filter_2(image_data, kernel, std):
 
 
 def clsf(image_data, kernel, lam):
+    # the laplacian kernel
     p = np.array([[0, -1, 0],
                   [-1, 4, -1],
                   [0, -1, 0]])
 
-    image_dft = fft.fft2(image_data)
-    p_dft = fft.fft2(p, s=image_data.shape)
-    blurK_dft = fft.fft2(kernel, s=image_data.shape)
-    image_dft = fft.fftshift(image_dft)
-    p_dft = fft.fftshift(p_dft)
-    blurK_dft = fft.fftshift(blurK_dft)
+    # calculating DFTs
+    image_dft, _ = dft(image_data)
+    padded_p = pad_to_be_like(p, image_dft)
+    p_dft, _ = dft(padded_p)
+    padded_kernel = pad_to_be_like(kernel, image_dft)
+    kernel_dft, _ = dft(padded_kernel)
 
-    filt_num = np.conjugate(blurK_dft)
-    filt_den = ((np.abs(blurK_dft))**2) + lam * (np.abs(p_dft))**2
-    filt = filt_num / filt_den
+    # computing the filter
+    filt_numerator = np.conjugate(kernel_dft)
+    filt_denominator = ((np.abs(kernel_dft))**2) + lam * (np.abs(p_dft))**2
+    filt = filt_numerator / filt_denominator
 
+    # Applying filter and restoring image
     filtered_image_dft = image_dft * filt
-    filtered_image_dft = fft.fftshift(filtered_image_dft)
-    filtered_image = np.abs(fft.ifft2(filtered_image_dft))
-    plt.imshow(filtered_image, cmap='gray')
-    plt.show()
+    filtered_image = inverse_dft(filtered_image_dft)
+    return filtered_image
 
 
 def pad_to_be_like(kernel, image):
