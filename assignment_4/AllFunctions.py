@@ -7,39 +7,11 @@ from scipy.stats import spearmanr
 import skimage.io as io
 import skimage.color as col
 from skimage.metrics import structural_similarity, mean_squared_error
-from skimage.restoration import denoise_bilateral
 from scipy.io import loadmat
-import time
 
 
 def main():
-    kernel_obj = loadmat('BlurKernel.mat')
-    kernel = kernel_obj['h']
-    kernel = kernel / kernel.sum()
-    low_noise = io.imread('Blurred-LowNoise.png')
-    # med_noise = io.imread('Blurred-MedNoise.png')
-    # high_noise = io.imread('Blurred-HighNoise.png')
-    original_book = io.imread('Original-book.png')
-    # noisy = io.imread('noisy-book1.png')
-    # noisy_2 = io.imread('noisy-book2.png')
-    # barbara = io.imread('barbara.tif')
-    # donut = io.imread('donut.jpg')
-    # phone = io.imread('phone.jpg')
-    # dude = io.imread('dude.jpg')
-    # blurred = bleh(original_book, kernel)
-    # blu, ble, bla, deblurred = inverse_filter(low_noise, kernel)
-    # fig, plots = plt.subplots(2, 2)
-    # fig.suptitle('Question 1(a):Inverse filtering')
-    # plots[0, 0].imshow(blu, cmap='gray')
-    # plots[0, 0].set_title('Noisy image spectrum (low noise)')
-    # plots[0, 1].imshow(ble, cmap='gray')
-    # plots[0, 1].set_title('Kernel Spectrum')
-    # plots[1, 0].imshow(bla, cmap='gray')
-    # plots[1, 0].set_title('Filtered Spectrum')
-    # plots[1, 1].imshow(deblurred, cmap='gray')
-    # plots[1, 1].set_title('Filtered Image')
-    # plt.show()
-    # wiener = wiener_filter(blurred, kernel, 0)
+    pass
 
 
 def inverse_filter(image_data, kernel):
@@ -49,7 +21,9 @@ def inverse_filter(image_data, kernel):
     padded_kernel = pad_to_be_like(kernel, image_data)
 
     kernel_dft, kernel_spectrum = dft(padded_kernel)
-    original_image_dft = np.real(image_dft * 1 / kernel_dft)
+    # setting values too close to zero to a threshold to reduce noise amplification
+    kernel_dft[np.abs(kernel_dft) < 0.1] = 0.1
+    original_image_dft = image_dft / kernel_dft
 
     original_image_spectrum = np.log(1 + np.abs(original_image_dft))
     original_image = inverse_dft(original_image_dft)
@@ -184,6 +158,7 @@ def generate_gaussian_kernel(size, std):
 
 
 def downsample(image_data, factor):
+    # throw away every nth sample
     downsampled_image = image_data[0::factor, 0::factor]
     return downsampled_image
 

@@ -8,10 +8,10 @@ import skimage.transform as tfm
 
 def main():
     question_1()
-    # question_2()
-    # question_3()
-    # question_4()
-    # question_5()
+    question_2()
+    question_3()
+    question_4()
+    question_5()
 
 
 def question_1():
@@ -27,7 +27,7 @@ def question_1():
     img_spec_3, kernel_spec_3, final_spec_3, image_3 = af.inverse_filter(
         high_noise, kernel)
     fig, plots = plt.subplots(3, 5)
-    fig.suptitle('Question 1 (c):Constrained Least Squares Filtering')
+    fig.suptitle('Question 1 (a):Inverse filtering')
     plots[0, 0].imshow(low_noise, cmap='gray')
     plots[0, 0].set_title('Original Image- Low noise Blurred')
     plots[0, 1].imshow(img_spec_1, cmap='gray')
@@ -65,19 +65,19 @@ def question_1():
     wiener_med_noise = af.wiener_filter(med_noise, kernel, 5)
     wiener_high_noise = af.wiener_filter(high_noise, kernel, 10)
     fig, plots = plt.subplots(2, 3)
-    fig.suptitle('Question 1 (c):Constrained Least Squares Filtering')
+    fig.suptitle('Question 1 (c):Wiener Filtering')
     plots[0, 0].imshow(low_noise, cmap='gray')
     plots[0, 0].set_title('Original Image- Low noise Blurred')
     plots[1, 0].imshow(wiener_low_noise, cmap='gray')
-    plots[1, 0].set_title('CLSF filtered- Low noise')
+    plots[1, 0].set_title('Wiener filtered- Low noise')
     plots[0, 1].imshow(med_noise, cmap='gray')
     plots[0, 1].set_title('Original- Medium noise blurred')
     plots[1, 1].imshow(wiener_med_noise, cmap='gray')
-    plots[1, 1].set_title('CLSF filtered- Med noise')
+    plots[1, 1].set_title('Wiener filtered- Med noise')
     plots[0, 2].imshow(high_noise, cmap='gray')
     plots[0, 2].set_title('Original- High noise blurred')
     plots[1, 2].imshow(wiener_high_noise, cmap='gray')
-    plots[1, 2].set_title('CLSF filtered- High noise')
+    plots[1, 2].set_title('Wiener filtered- High noise')
     plt.show()
 
     # # part c
@@ -100,11 +100,40 @@ def question_1():
     plots[1, 2].set_title('CLSF filtered- High noise')
     plt.show()
 
+    # comparing all three
+    fig, plots = plt.subplots(3, 4)
+    fig.suptitle('Question 1 Comparing all filters')
+    plots[0, 0].imshow(low_noise, cmap='gray')
+    plots[0, 0].set_title('Original Image- Low noise Blurred')
+    plots[0, 1].imshow(image_1, cmap='gray')
+    plots[0, 1].set_title('Inverse filtered-Low noise')
+    plots[0, 2].imshow(wiener_low_noise, cmap='gray')
+    plots[0, 2].set_title('Wiener-Low noise')
+    plots[0, 3].imshow(clsf_low_noise, cmap='gray')
+    plots[0, 3].set_title('CLSF-Low noise')
+    plots[1, 0].imshow(med_noise, cmap='gray')
+    plots[1, 0].set_title('Original Image- Medium noise Blurred')
+    plots[1, 1].imshow(image_2, cmap='gray')
+    plots[1, 1].set_title('Inverse filtered-Medium noise')
+    plots[1, 2].imshow(wiener_med_noise, cmap='gray')
+    plots[1, 2].set_title('Wiener-Medium noise')
+    plots[1, 3].imshow(clsf_med_noise, cmap='gray')
+    plots[1, 3].set_title('CLSF-Medium noise')
+    plots[2, 0].imshow(high_noise, cmap='gray')
+    plots[2, 0].set_title('Original Image- High noise Blurred')
+    plots[2, 1].imshow(image_3, cmap='gray')
+    plots[2, 1].set_title('Inverse filtered-High noise')
+    plots[2, 2].imshow(wiener_high_noise, cmap='gray')
+    plots[2, 2].set_title('Wiener-High noise')
+    plots[2, 3].imshow(clsf_high_noise, cmap='gray')
+    plots[2, 3].set_title('CLSF-High noise')
+    plt.show()
+
 
 def question_2():
     # part a
     noisy = io.imread('noisy-book1.png')
-    gauss_denoised = af.gaussian_denoise(noisy, 7, 3)
+    gauss_denoised = af.gaussian_denoise(noisy, 15, 4)
     median_denoised = af.median_filter_denoise(noisy, 5)
     fig, plots = plt.subplots(1, 3)
     fig.suptitle('Question 2 (a):Comparing median and gaussian filtering')
@@ -118,10 +147,10 @@ def question_2():
 
     # part b
     noisy_2 = io.imread('noisy-book2.png')
-    gauss_denoised = af.gaussian_denoise(noisy_2, 11, 6)
+    gauss_denoised = af.gaussian_denoise(noisy_2, 15, 4)
     bilateral_filtered = af.bilateral_filter(noisy_2, 11, 6, 0.3)
     fig, plots = plt.subplots(1, 3)
-    fig.suptitle('Question 2 (a):Comparing median and gaussian filtering')
+    fig.suptitle('Question 2 (b):Comparing gaussian and Bilateral filtering')
     plots[0].imshow(noisy_2, cmap='gray')
     plots[0].set_title('Original Image')
     plots[1].imshow(gauss_denoised, cmap='gray')
