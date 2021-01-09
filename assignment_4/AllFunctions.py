@@ -15,7 +15,8 @@ import time
 def main():
     kernel_obj = loadmat('BlurKernel.mat')
     kernel = kernel_obj['h']
-    # low_noise = io.imread('Blurred-LowNoise.png')
+    kernel = kernel / kernel.sum()
+    low_noise = io.imread('Blurred-LowNoise.png')
     # med_noise = io.imread('Blurred-MedNoise.png')
     # high_noise = io.imread('Blurred-HighNoise.png')
     original_book = io.imread('Original-book.png')
@@ -25,16 +26,20 @@ def main():
     # donut = io.imread('donut.jpg')
     # phone = io.imread('phone.jpg')
     # dude = io.imread('dude.jpg')
-    blurred = bleh(original_book, kernel)
-    wiener = wiener_filter(blurred, kernel, 0)
-
-
-def bleh(image, kernel):
-    final_image = ndi.convolve(image, kernel)
-    plt.imshow(final_image, cmap='gray')
-    plt.show()
-    print(final_image.shape)
-    return final_image
+    # blurred = bleh(original_book, kernel)
+    # blu, ble, bla, deblurred = inverse_filter(low_noise, kernel)
+    # fig, plots = plt.subplots(2, 2)
+    # fig.suptitle('Question 1(a):Inverse filtering')
+    # plots[0, 0].imshow(blu, cmap='gray')
+    # plots[0, 0].set_title('Noisy image spectrum (low noise)')
+    # plots[0, 1].imshow(ble, cmap='gray')
+    # plots[0, 1].set_title('Kernel Spectrum')
+    # plots[1, 0].imshow(bla, cmap='gray')
+    # plots[1, 0].set_title('Filtered Spectrum')
+    # plots[1, 1].imshow(deblurred, cmap='gray')
+    # plots[1, 1].set_title('Filtered Image')
+    # plt.show()
+    # wiener = wiener_filter(blurred, kernel, 0)
 
 
 def inverse_filter(image_data, kernel):
@@ -43,24 +48,43 @@ def inverse_filter(image_data, kernel):
     padded_kernel = pad_to_be_like(kernel, image_data)
 
     kernel_dft, kernel_spectrum = dft(padded_kernel)
+    original_image_dft = np.real(image_dft * 1 / kernel_dft)
 
-    original_image_dft = image_dft * 1 / kernel_dft
     original_image_spectrum = np.log(1 + np.abs(original_image_dft))
     original_image = inverse_dft(original_image_dft)
     return image_spectrum, kernel_spectrum, original_image_spectrum, original_image
 
 
 def wiener_filter(image_data, kernel, std):
+    image_dft = fft.fft2(image_data)
+    sf = (np.abs(image_dft)**2)
+    sw = std**2
+
+    kernel_dft = (fft.fft2(kernel, s=image_dft.shape))
+
+    D_numerator = np.conj(kernel_dft)
+    D_denominator = (np.square(np.abs(kernel_dft)) + sw)
+    D = D_numerator / D_denominator
+
+    restored_dft = D * image_dft
+
+    restored_image = fft.ifft2(restored_dft)
+    plt.imshow(np.abs(restored_image), cmap='gray')
+    plt.show()
+
+
+def wiener_filter_2(image_data, kernel, std):
     image_dft, _ = dft(image_data)
     # power spectral density
-    sf = np.square(np.abs(image_dft))
+    sf = np.sum(np.square(np.abs(image_dft)))
     sw = std**2
 
     padded_kernel = pad_to_be_like(kernel, image_data)
+
     kernel_dft, _ = dft(padded_kernel)
 
     D_numerator = sf * np.conj(kernel_dft)
-    D_denominator = np.square(np.abs(kernel_dft)) * sf + sw
+    D_denominator = np.sum(np.square(np.abs(kernel_dft))) * sf + sw
     D = D_numerator / D_denominator
 
     restored_dft = D * image_dft
@@ -71,18 +95,37 @@ def wiener_filter(image_data, kernel, std):
     plt.show()
 
 
+def clsf(image_data, kernel, lam):
+    p = np.array([[0, -1, 0],
+                  [-1, 4, -1],
+                  [0, -1, 0]])
+
+    image_dft = fft.fft2(image_data)
+    p_dft = fft.fft2(p, s=image_data.shape)
+    blurK_dft = fft.fft2(kernel, s=image_data.shape)
+    image_dft = fft.fftshift(image_dft)
+    p_dft = fft.fftshift(p_dft)
+    blurK_dft = fft.fftshift(blurK_dft)
+
+    filt_num = np.conjugate(blurK_dft)
+    filt_den = ((np.abs(blurK_dft))**2) + lam * (np.abs(p_dft))**2
+    filt = filt_num / filt_den
+
+    filtered_image_dft = image_dft * filt
+    filtered_image_dft = fft.fftshift(filtered_image_dft)
+    filtered_image = np.abs(fft.ifft2(filtered_image_dft))
+    plt.imshow(filtered_image, cmap='gray')
+    plt.show()
+
+
 def pad_to_be_like(kernel, image):
     rows_k, cols_k = kernel.shape
     rows_i, cols_i = image.shape
     pad_h = cols_i - cols_k
     pad_v = rows_i - rows_k
 
-    pad_left = int(pad_h / 2)
-    pad_right = cols_i - cols_k - pad_left
-    pad_top = int(pad_v / 2)
-    pad_bottom = rows_i - rows_k - pad_top
     padded_kernel = np.pad(
-        kernel, ((pad_top, pad_bottom), (pad_left, pad_right)), 'constant')
+        kernel, ((0, pad_v), (0, pad_h)), 'constant')
     return padded_kernel
 
 
@@ -114,7 +157,7 @@ def median_filter_denoise(image_data, kernel_size):
     for i in range(padding, rows - padding):
         for j in range(padding, columns - padding):
             window = padded_image[i - padding:i +
-                                  padding + 1, j - padding:j + padding + 1]
+                                  padding + 1, j - padding: j + padding + 1]
             filtered_image[i - padding, j - padding] = np.median(window)
     return filtered_image
 
@@ -129,8 +172,8 @@ def bilateral_filter(image_data, kernel_size, std_dist, std_lum):
     rows, columns = padded_image.shape
     for i in range(padding, rows - padding):
         for j in range(padding, columns - padding):
-            window = padded_image[i - padding:i +
-                                  padding + 1, j - padding:j + padding + 1]
+            window = padded_image[i - padding: i +
+                                  padding + 1, j - padding: j + padding + 1]
             # computing the luminance kernel
             value = padded_image[i, j]
             x = (window - value)**2
