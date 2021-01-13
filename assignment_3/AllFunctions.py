@@ -17,8 +17,8 @@ def square_average_filter(image_path, size):
 def high_boost_filter(image_path, ref_image_path):
     # the denoised and then blurred images
     reference_image = io.imread(ref_image_path)
-    denoised_image = square_average_filter(image_path, 5)
-    blurred_image = flt.gaussian(denoised_image, 3) * 255
+    denoised_image = square_average_filter(image_path, 10)
+    blurred_image = flt.gaussian(denoised_image, 5) * 255
 
     # the unsharp mask
     mask = (denoised_image - blurred_image).astype(np.int64)
@@ -31,6 +31,7 @@ def high_boost_filter(image_path, ref_image_path):
         error = np.square(sharpened_image - reference_image).mean()
         errors[i] = error
     k_optimum = k_values[np.argmin(errors)]
+    print(k_optimum)
 
     # applying the sharpening
     filtered_image = denoised_image + k_optimum * mask
