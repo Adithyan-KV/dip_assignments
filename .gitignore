@@ -9,3 +9,6 @@ img
 
 #ignore huge ass folder
 hw5
+
+#ignore test images
+test_images

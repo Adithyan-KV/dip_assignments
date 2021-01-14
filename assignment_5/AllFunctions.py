@@ -7,9 +7,7 @@ import scipy.ndimage as ndi
 
 
 def main():
-    window_image = io.imread('win.jpg')
-    window_img_grayscale = col.rgb2gray(window_image)
-    corner_map = harris_corner_detect(window_img_grayscale, 3, 2, 0.1)
+    pass
 
 
 def harris_corner_detect(image_data, win_size=3, blur_std=2, threshold=0.2):
@@ -49,21 +47,27 @@ def harris_corner_detect(image_data, win_size=3, blur_std=2, threshold=0.2):
     corner_map = R > threshold * R.max()
     corner_locations = np.where(corner_map == 1)
 
-    fig, plots = plt.subplots(1, 4)
-    fig.suptitle('Question 1 (c):Constrained Least Squares Filtering')
-    plots[0].imshow(image_data, cmap='gray')
-    plots[0].set_title('Original Image')
-    plots[1].imshow(R, cmap='gray')
-    plots[1].set_title('R')
-    plots[2].imshow(corner_map, cmap='gray')
-    plots[2].set_title('Corners detected')
-    plots[3].imshow(image_data, cmap='gray')
-    plots[3].scatter(corner_locations[1],
-                     corner_locations[0], s=0.6, c='red')
-    plots[3].set_title('Corners')
-    plt.show()
+    return R, corner_map, corner_locations
 
-    return corner_map
+
+def visualize_multiple_thresholds(image_data, R_map):
+    thresholds = np.arange(0.05, 1, 0.15)
+    fig, plots = plt.subplots(2, 3)
+    fig.suptitle('Question 1 : Multiple Thresholds')
+    for i in range(0, len(thresholds) - 1):
+        corner_map = R_map > thresholds[i]
+        locations = np.where(corner_map == 1)
+
+        # coordinates for subplots in plotting
+        row = int(i / 3)
+        column = i % 3
+
+        plots[row, column].imshow(image_data, cmap='gray')
+        plots[row, column].scatter(
+            locations[1], locations[0], s=5, c='red')
+        plots[row, column].set_title(
+            f'Threshold {round(thresholds[i]*100)}% of max value')
+    plt.show()
 
 
 if __name__ == "__main__":
