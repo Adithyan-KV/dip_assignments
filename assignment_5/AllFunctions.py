@@ -3,11 +3,24 @@ import numpy as np
 import matplotlib.pyplot as plt
 import skimage.color as col
 from skimage.filters import gaussian
+import skimage.transform as tr
 import scipy.ndimage as ndi
 
 
 def main():
-    pass
+    window_image = io.imread('win.jpg')
+    car_image = io.imread('car.jpg')
+    car_img_grayscale = col.rgb2gray(car_image)
+    window_img_grayscale = col.rgb2gray(window_image)
+    image_rot_1, locations_1 = rotate_and_corner_detect(car_img_grayscale, 45)
+    fig, plots = plt.subplots(1, 3)
+    fig.suptitle('Question 1 :Harris corner detector')
+    plots[0, 0].imshow(image_rot_1, cmap='gray')
+    plots[0, 0].set_title('Original Image')
+    plots[0, 1].imshow(image_rot_1, cmap='gray')
+    plots[0, 1].set_title('R')
+    plots[0, 1].scatter(locations_1[1], locations_1[0], s=5, c='yellow')
+    plt.show()
 
 
 def harris_corner_detect(image_data, win_size=3, blur_std=2, threshold=0.2):
@@ -68,6 +81,12 @@ def visualize_multiple_thresholds(image_data, R_map):
         plots[row, column].set_title(
             f'Threshold {round(thresholds[i]*100)}% of max value')
     plt.show()
+
+
+def rotate_and_corner_detect(image, angle):
+    image_rot = tr.rotate(image, angle, resize=True)
+    _, _, corner_locations = harris_corner_detect(image_rot, 3, 2, 0.1)
+    return image_rot, corner_locations
 
 
 if __name__ == "__main__":
