@@ -5,6 +5,7 @@ import skimage.color as col
 from skimage.filters import gaussian
 import skimage.transform as tr
 import scipy.ndimage as ndi
+from skimage.util import random_noise
 
 
 def main():
@@ -87,6 +88,21 @@ def rotate_and_corner_detect(image, angle):
     image_rot = tr.rotate(image, angle, resize=True)
     _, _, corner_locations = harris_corner_detect(image_rot, 3, 2, 0.1)
     return image_rot, corner_locations
+
+
+def scale_and_corner_detect(image, scale_factor):
+    image_scaled = tr.rescale(image, scale_factor, anti_aliasing=True)
+    _, _, corner_locations = harris_corner_detect(image_scaled, 3, 2, 0.1)
+    return image_scaled, corner_locations
+
+
+def add_noise_and_corner_detect(image, noise='gaussian', std=0.01, am=0.1):
+    if noise == 'gaussian':
+        image_noisy = random_noise(image, noise, var=std)
+    elif noise == 's&p':
+        image_noisy = random_noise(image, noise, amount=am)
+    _, _, corner_locations = harris_corner_detect(image_noisy, 3, 2, 0.1)
+    return image_noisy, corner_locations
 
 
 if __name__ == "__main__":
