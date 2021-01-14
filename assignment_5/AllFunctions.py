@@ -7,12 +7,12 @@ import scipy.ndimage as ndi
 
 
 def main():
-    window_image = io.imread('bar.jpg')
+    window_image = io.imread('win.jpg')
     window_img_grayscale = col.rgb2gray(window_image)
-    corner_map = harris_corner_detect(window_img_grayscale)
+    corner_map = harris_corner_detect(window_img_grayscale, 3, 2, 0.1)
 
 
-def harris_corner_detect(image_data):
+def harris_corner_detect(image_data, win_size=3, blur_std=2, threshold=0.2):
     image_blurred = gaussian(image_data, 2)
     Ix = ndi.sobel(image_blurred, 0)
     Iy = ndi.sobel(image_blurred, 1)
@@ -25,7 +25,6 @@ def harris_corner_detect(image_data):
     R = np.zeros_like(image_data)
     k = 0.04
 
-    win_size = 3
     offset = int(win_size / 2)
 
     for i in range(offset, rows - offset):
@@ -47,10 +46,10 @@ def harris_corner_detect(image_data):
 
             R[i, j] = np.linalg.det(M) - k * (np.trace(M)**2)
 
-    print(R.max(), R.min())
-    corner_map = np.abs(R) > 30
+    corner_map = R > threshold * R.max()
+    corner_locations = np.where(corner_map == 1)
 
-    fig, plots = plt.subplots(1, 3)
+    fig, plots = plt.subplots(1, 4)
     fig.suptitle('Question 1 (c):Constrained Least Squares Filtering')
     plots[0].imshow(image_data, cmap='gray')
     plots[0].set_title('Original Image')
@@ -58,6 +57,10 @@ def harris_corner_detect(image_data):
     plots[1].set_title('R')
     plots[2].imshow(corner_map, cmap='gray')
     plots[2].set_title('Corners detected')
+    plots[3].imshow(image_data, cmap='gray')
+    plots[3].scatter(corner_locations[1],
+                     corner_locations[0], s=0.6, c='red')
+    plots[3].set_title('Corners')
     plt.show()
 
     return corner_map
